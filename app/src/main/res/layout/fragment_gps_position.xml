@@ -1,0 +1,26 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.nabicon.GpsPositionFragment">
+
+    <TextView
+        android:id="@+id/gps_address"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:drawableStart="@drawable/you_are_here_icon"
+        android:layout_alignParentTop="true"
+        android:layout_centerInParent="true"
+        android:background="@color/colorAddressHeader"
+        android:layout_marginBottom="@dimen/bottom_margin_address_header"
+        android:text="@string/hello_blank_fragment" />
+
+    <Button
+        android:id="@+id/buttonConfigureBeacons"
+        style="@style/ButtonTheme"
+        android:layout_below="@id/gps_address"
+        android:layout_centerInParent="true"
+        android:text="Configure Beacons"
+        android:onClick="scanBeacons"/>
+    
+</RelativeLayout>

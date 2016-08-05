@@ -1,0 +1,35 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.nabicon.ListBeaconsFragment">
+
+    <Button
+        android:id="@+id/buttonScanBeacons"
+        style="@style/ButtonTheme"
+        android:layout_centerInParent="true"
+        android:text="Scan Beacons" />
+
+    <TextView
+        android:id="@+id/accountName"
+        android:text="Select account to use"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerVertical="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5dp"
+        android:layout_below="@id/buttonScanBeacons"
+        android:drawableEnd="@drawable/ic_action_mode_edit"
+        android:drawablePadding="5dp"/>
+
+
+    <ListView
+        android:id="@+id/listView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/accountName"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5dp"
+        android:background="@color/colorAddressHeader"/>
+
+</RelativeLayout>

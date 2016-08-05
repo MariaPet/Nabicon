@@ -1,0 +1,10 @@
+<resources>
+    <string name="google_app_id">700806177245</string>
+    <string name="app_name">Nabicon</string>
+    <string name="action_settings">Settings</string>
+
+    <string name="click_to_set">[click to set]</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
