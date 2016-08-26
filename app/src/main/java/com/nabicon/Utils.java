@@ -1,11 +1,12 @@
 package com.nabicon;
 
 import android.util.Base64;
+import android.view.View;
 
 /**
  * Created by mariloo on 12/7/2016.
  */
-public class Utils {
+class Utils {
 
     private Utils() {}
 
@@ -25,5 +26,14 @@ public class Utils {
             chars[i * 2 + 1] = HEX[c & 0x0F];
         }
         return new String(chars).toLowerCase();
+    }
+
+    static void setEnabledViews(boolean enabled, View... views) {
+        if (views == null || views.length == 0) {
+            return;
+        }
+        for (View v : views) {
+            v.setEnabled(enabled);
+        }
     }
 }
