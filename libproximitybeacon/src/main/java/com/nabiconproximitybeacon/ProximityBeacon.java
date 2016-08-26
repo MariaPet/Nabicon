@@ -40,6 +40,16 @@ public interface ProximityBeacon {
     void listNamespaces(Callback callback);
 
     /**
+     * https://developers.google.com/beacons/proximity/reference/rest/v1beta1/beacons.attachments/create
+     */
+    void createAttachment(Callback callback, String beaconName, JSONObject requestBody);
+
+    /**
+     * https://developers.google.com/beacons/proximity/reference/rest/v1beta1/beacons.attachments/delete
+     */
+    void deleteAttachment(Callback callback, String attachmentName);
+
+    /**
      * https://developers.google.com/beacons/proximity/reference/rest/v1beta1/beacons.attachments/list
      */
     void listAttachments(Callback callback, String beaconName);

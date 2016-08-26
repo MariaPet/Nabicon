@@ -73,6 +73,16 @@ public class ProximityBeaconImpl implements ProximityBeacon{
     }
 
     @Override
+    public void createAttachment(Callback callback, String beaconName, JSONObject requestBody) {
+        new AuthTask(beaconName + "/attachments", POST, requestBody.toString(), callback).execute();
+    }
+
+    @Override
+    public void deleteAttachment(Callback callback, String attachmentName) {
+        new AuthTask(attachmentName, DELETE, "", callback).execute();
+    }
+
+    @Override
     public void listAttachments(Callback callback, String beaconName) {
         new AuthTask(beaconName + "/attachments?namespacedType=*/*", callback).execute();
     }

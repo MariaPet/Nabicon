@@ -2,7 +2,9 @@ package com.nabicon;
 
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.app.Fragment;
@@ -10,12 +12,15 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TableLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
@@ -106,7 +111,71 @@ public class ManageBeaconFragment extends Fragment {
         });
         mapView = (ImageView)rootView.findViewById(R.id.mapView);
         expectedStability = (TextView)rootView.findViewById(R.id.expectedStability);
+        expectedStability.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder =
+                        new AlertDialog.Builder(getActivity()).setTitle("Edit Stability");
+                final ArrayAdapter<CharSequence> adapter = ArrayAdapter
+                        .createFromResource(getActivity(), R.array.stability_enums,
+                                android.R.layout.simple_spinner_item);
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                final Spinner spinner = new Spinner(getActivity());
+                spinner.setAdapter(adapter);
+                // Set the position of the spinner to the current value.
+                if (beacon.expectedStability != null &&
+                        !beacon.expectedStability.equals(Beacon.STABILITY_UNSPECIFIED)) {
+                    for (int i = 0; i < spinner.getCount(); i++) {
+                        if (beacon.expectedStability.equals(spinner.getItemAtPosition(i))) {
+                            spinner.setSelection(i);
+                        }
+                    }
+                }
+                builder.setView(spinner);
+                builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        beacon.expectedStability = (String)spinner.getSelectedItem();
+                        updateBeacon();
+                        dialog.dismiss();
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                builder.show();
+            }
+        });
         description = (TextView)rootView.findViewById(R.id.description);
+        description.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                AlertDialog.Builder builder =
+                        new AlertDialog.Builder(getActivity()).setTitle("Edit description");
+                final EditText editText = new EditText(getActivity());
+                editText.setText(description.getText());
+                builder.setView(editText);
+                builder.setPositiveButton("Save", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        beacon.description = editText.getText().toString();
+                        updateBeacon();
+                        dialog.dismiss();
+                    }
+                });
+                builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                builder.show();
+            }
+        });
         actionButton = (Button)rootView.findViewById(R.id.actionButton);
         decommissionButton = (Button)rootView.findViewById(R.id.decommissionButton);
         attachmentsDivider = rootView.findViewById(R.id.attachmentsDivider);
@@ -449,17 +518,136 @@ public class ManageBeaconFragment extends Fragment {
         Button insertButton = new Button(getActivity());
         insertButton.setText("+");
         insertButton.setLayoutParams(BUTTON_COL_LAYOUT);
-//        insertButton.setOnClickListener(
-//                makeInsertAttachmentOnClickListener(insertButton, namespaceTextView, typeEditText,
-//                        dataEditText));
+        insertButton.setOnClickListener(
+                makeInsertAttachmentOnClickListener(insertButton, namespaceTextView, typeEditText,
+                        dataEditText));
 
         insertRow.addView(insertButton);
         return insertRow;
+    }
+
+    private View.OnClickListener makeInsertAttachmentOnClickListener(final Button insertButton,
+                                                                     final TextView namespaceTextView,
+                                                                     final EditText typeEditText,
+                                                                     final EditText dataEditText) {
+        return new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final String namespace = namespaceTextView.getText().toString();
+                if (namespace.length() == 0) {
+                    toast("namespace cannot be empty");
+                    return;
+                }
+                final String type = typeEditText.getText().toString();
+                if (type.length() == 0) {
+                    toast("type cannot be empty");
+                    return;
+                }
+                final String data = dataEditText.getText().toString();
+                if (data.length() == 0) {
+                    toast("data cannot be empty");
+                    return;
+                }
+
+                Utils.setEnabledViews(false, insertButton);
+                JSONObject body = buildCreateAttachmentJsonBody(namespace, type, data);
+
+                Callback createAttachmentCallback = new Callback() {
+                    @Override
+                    public void onFailure(Request request, IOException e) {
+                        Log.e(TAG, "Failed request: " + request, e);
+                        Utils.setEnabledViews(false, insertButton);
+                    }
+
+                    @Override
+                    public void onResponse(Response response) throws IOException {
+                        String body = response.body().string();
+                        if (response.isSuccessful()) {
+                            try {
+                                JSONObject json = new JSONObject(body);
+                                attachmentsTable.addView(makeAttachmentRow(json), 2);
+                                namespaceTextView.setText(namespace);
+                                typeEditText.setText("");
+                                typeEditText.requestFocus();
+                                dataEditText.setText("");
+                                insertButton.setEnabled(true);
+                            } catch (JSONException e) {
+                                Log.e(TAG, "JSONException in building attachment data", e);
+                            }
+                        } else {
+                            Log.e(TAG, "Unsuccessful createAttachment request: " + body);
+                        }
+                        Utils.setEnabledViews(true, insertButton);
+                    }
+                };
+
+                client.createAttachment(createAttachmentCallback, beacon.getBeaconName(), body);
+            }
+        };
+    }
+
+    private LinearLayout makeAttachmentRow(JSONObject attachment) throws JSONException{
+        LinearLayout row = new LinearLayout(getActivity());
+        int id = View.generateViewId();
+        row.setId(id);
+        String[] namespacedType = attachment.getString("namespacedType").split("/");
+        row.addView(makeTextView(namespacedType[0]));
+        row.addView(makeTextView(namespacedType[1]));
+        String dataStr = attachment.getString("data");
+        String base64Decoded = new String(Utils.base64Decode(dataStr));
+        row.addView(makeTextView(base64Decoded));
+        row.addView(createAttachmentDeleteButton(id, attachment.getString("attachmentName")));
+        return row;
+    }
+
+    private Button createAttachmentDeleteButton(final int viewId,  final String attachmentName) {
+        final Button button = new Button(getActivity());
+        button.setLayoutParams(BUTTON_COL_LAYOUT);
+        button.setText("-");
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Utils.setEnabledViews(false, button);
+                Callback deleteAttachmentCallback = new Callback() {
+                    @Override
+                    public void onFailure(Request request, IOException e) {
+                        Log.e(TAG, "Failed request: " + request, e);
+                    }
+
+                    @Override
+                    public void onResponse(Response response) throws IOException {
+                        if (response.isSuccessful()) {
+                            attachmentsTable.removeView(attachmentsTable.findViewById(viewId));
+                        } else {
+                            String body = response.body().string();
+                            Log.e(TAG, "Unsuccessful deleteAttachment request: " + body);
+                        }
+                    }
+                };
+                client.deleteAttachment(deleteAttachmentCallback, attachmentName);
+            }
+        });
+        return button;
+    }
+
+    private JSONObject buildCreateAttachmentJsonBody(String namespace, String type, String data) {
+        try {
+            return new JSONObject().put("namespacedType", namespace + "/" + type)
+                    .put("data", Utils.base64Encode(data.getBytes()));
+        }
+        catch (JSONException e) {
+            Log.e(TAG, "JSONException", e);
+        }
+        return null;
     }
 
     private EditText makeEditText() {
         EditText editText = new EditText(getActivity());
         editText.setLayoutParams(FIXED_WIDTH_COLS_LAYOUT);
         return editText;
+    }
+
+    private void toast(String s) {
+        Toast.makeText(getActivity(), s, Toast.LENGTH_LONG).show();
     }
 }
