@@ -1,6 +1,7 @@
 package com.nabicon;
 
 import android.app.FragmentManager;
+import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
@@ -8,7 +9,8 @@ import android.util.Log;
 
 
 public class MainActivity extends AppCompatActivity implements
-        GpsPositionFragment.ConfigureBeaconsListener,
+        GpsPositionFragment.ConfigureBeaconsButtonListener,
+        GpsPositionFragment.StartButtonListener,
         ListBeaconsFragment.ManageBeaconListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -38,6 +40,12 @@ public class MainActivity extends AppCompatActivity implements
     }
 
     @Override
+    public void onStartClicked() {
+        Intent i = new Intent(this, RoomKeeperActivity.class);
+        startActivity(i);
+    }
+
+    @Override
     public void onBeaconItemClicked(Bundle bundle) {
         ManageBeaconFragment fragment = new ManageBeaconFragment();
         fragment.setArguments(bundle);
@@ -46,4 +54,6 @@ public class MainActivity extends AppCompatActivity implements
                 addToBackStack(ListBeaconsFragment.class.getSimpleName()).
                 commit();
     }
+
+
 }

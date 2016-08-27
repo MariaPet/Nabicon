@@ -40,10 +40,15 @@ public class GpsPositionFragment extends Fragment implements
     private GoogleApiClient mGoogleApiClient;
     private Location mlastLocation;
     private AddressResultReceiver mResultReceiver;
-    private ConfigureBeaconsListener configureBeaconsListener;
+    private ConfigureBeaconsButtonListener configureBeaconsListener;
+    private StartButtonListener startButtonListener;
 
-    public interface ConfigureBeaconsListener {
+    public interface ConfigureBeaconsButtonListener {
         void onConfigureBeaconsClicked();
+    }
+
+    public interface StartButtonListener {
+        void onStartClicked();
     }
 
     public GpsPositionFragment() {
@@ -63,13 +68,23 @@ public class GpsPositionFragment extends Fragment implements
                     .addOnConnectionFailedListener(this)
                     .build();
         }
-        Button configureBeacons = (Button) view.findViewById(R.id.buttonConfigureBeacons);
-        configureBeacons.setOnClickListener(new View.OnClickListener() {
+        Button configureBeaconsButton = (Button) view.findViewById(R.id.buttonConfigureBeacons);
+        configureBeaconsButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
                 if (configureBeaconsListener != null) {
                     configureBeaconsListener.onConfigureBeaconsClicked();
+                }
+            }
+        });
+        Button startButton = (Button) view.findViewById(R.id.buttonStart);
+        startButton.setOnClickListener(new View.OnClickListener() {
+
+            @Override
+            public void onClick(View v) {
+                if (startButtonListener != null) {
+                    startButtonListener.onStartClicked();
                 }
             }
         });
@@ -92,11 +107,17 @@ public class GpsPositionFragment extends Fragment implements
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        if (context instanceof ConfigureBeaconsListener) {
-            configureBeaconsListener = (ConfigureBeaconsListener) context;
+        if (context instanceof ConfigureBeaconsButtonListener) {
+            configureBeaconsListener = (ConfigureBeaconsButtonListener) context;
         } else {
             throw new RuntimeException(context.toString()
-                    + " must implement ConfigureBeaconsListener");
+                    + " must implement ConfigureBeaconsButtonListener");
+        }
+        if (context instanceof StartButtonListener) {
+            startButtonListener = (StartButtonListener) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement StartButtonListener");
         }
     }
 
@@ -104,6 +125,7 @@ public class GpsPositionFragment extends Fragment implements
     public void onDetach() {
         super.onDetach();
         configureBeaconsListener = null;
+        startButtonListener = null;
     }
 
     protected void startIntentService() {
