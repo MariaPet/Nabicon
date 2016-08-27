@@ -22,5 +22,13 @@
         android:layout_centerInParent="true"
         android:text="Configure Beacons"
         android:onClick="scanBeacons"/>
+
+    <Button
+        android:id="@+id/buttonStart"
+        style="@style/ButtonTheme"
+        android:layout_below="@id/buttonConfigureBeacons"
+        android:layout_centerInParent="true"
+        android:layout_marginTop="@dimen/bottom_margin_address_header"
+        android:text="Start" />
     
 </RelativeLayout>
