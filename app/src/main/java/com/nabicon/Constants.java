@@ -13,6 +13,7 @@ public class Constants {
     public static final int SUCCESSFUL_RESULT = 0;
     public static final int FAILURE_RESULT = 1;
     static final int REQUEST_CODE_PLACE_PICKER = 1003;
+    static final int REQUEST_CODE_ENABLE_BLE = 2;
     //TODO why do we use this package name?
     public static final String PACKAGE_NAME =
             "com.google.android.gms.location.sample.locationaddress";

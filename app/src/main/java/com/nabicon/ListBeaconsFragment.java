@@ -57,7 +57,6 @@ public class ListBeaconsFragment extends Fragment {
 
     public final static int REQUEST_PICK_ACCOUNT = 0;
     public static final int REQUEST_ERROR_RECOVER = 1;
-    public static final int REQUEST_CODE_ENABLE_BLE = 2;
 
     //TODO Read all about it
     public final static String EXTRA_DESTINATION = "com.nabicon.DESTINATION";
@@ -78,13 +77,9 @@ public class ListBeaconsFragment extends Fragment {
     private SharedPreferences sharedPreferences;
     private ArrayList<Beacon> scannedBeaconsList;
     private BeaconArrayAdapter arrayAdapter;
-    //TODO Read all about it
     private ScanCallback scanCallback;
-    private BluetoothLeScanner scanner;
     private Button scanBeaconsButton;
     private TextView accountNameView;
-    // Receives the runnable that stops scanning after SCAN_TIME_MILLIS.
-    private static final Handler handler = new Handler(Looper.getMainLooper());
     private ManageBeaconListener manageBeaconListener;
 
     ProximityBeacon client;
@@ -139,7 +134,7 @@ public class ListBeaconsFragment extends Fragment {
                 Log.e(TAG, "onScanFaile errorCode" + errorCode);
             }
         };
-        createScanner();
+        BeaconScanner.createScanner(getActivity());
     }
 
     @Override
@@ -150,7 +145,7 @@ public class ListBeaconsFragment extends Fragment {
         }
         else {
             throw new RuntimeException(context.toString()
-                    + " must implement ConfigureBeaconsListener");
+                    + " must implement ConfigureBeaconsButtonListener");
         }
     }
 
@@ -170,17 +165,8 @@ public class ListBeaconsFragment extends Fragment {
             @Override
             public void onClick(View v) {
                 arrayAdapter.clear();
-                scanner.startScan(scanCallback);
-                Log.i(TAG, "Start scan");
                 client = new ProximityBeaconImpl(getActivity(), accountNameView.getText().toString());
-                Runnable stopScanning = new Runnable() {
-                    @Override
-                    public void run() {
-                        scanner.stopScan(scanCallback);
-                        Log.i(TAG, "Stop scanning");
-                    }
-                };
-                handler.postDelayed(stopScanning, 5000);
+                BeaconScanner.startScan(scanCallback);
             }
         });
 
@@ -197,7 +183,7 @@ public class ListBeaconsFragment extends Fragment {
         if (!accountName.isEmpty()) {
             accountNameView.setText(accountName);
         }
-        else {
+         else {
             pickUserAccount();
         }
         ListView listView = (ListView) rootView.findViewById(R.id.listView);
@@ -216,11 +202,9 @@ public class ListBeaconsFragment extends Fragment {
                                 }
                             }).show();
                     return;
-                }
-                else if (beacon.status.equals(Beacon.STATUS_UNSPECIFIED)) {
+                } else if (beacon.status.equals(Beacon.STATUS_UNSPECIFIED)) {
                     return;
-                }
-                else {
+                } else {
                     if (manageBeaconListener != null) {
                         Bundle bundle = new Bundle();
                         bundle.putString("accountName", accountNameView.getText().toString());
@@ -269,9 +253,9 @@ public class ListBeaconsFragment extends Fragment {
                     // Notify users that they must pick an account to proceed.
                     Toast.makeText(getActivity(), "Please pick an account", Toast.LENGTH_SHORT).show();
                 }
-            case REQUEST_CODE_ENABLE_BLE:
+            case Constants.REQUEST_CODE_ENABLE_BLE:
                 if (resultCode == Activity.RESULT_OK) {
-                    createScanner();
+                    BeaconScanner.createScanner(getActivity());
                 }
                 if (resultCode == Activity.RESULT_CANCELED) {
                     Log.w(TAG, "Please enable Bluetooth");
@@ -338,58 +322,4 @@ public class ListBeaconsFragment extends Fragment {
         });
     }
 
-    private void createScanner() {
-        BluetoothManager btManager = (BluetoothManager)getActivity().getSystemService(Context.BLUETOOTH_SERVICE);
-        BluetoothAdapter btAdapter = btManager.getAdapter();
-        if(btAdapter == null || !btAdapter.isEnabled()) {
-            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBtIntent, REQUEST_CODE_ENABLE_BLE);
-        }
-        if (btAdapter == null || !btAdapter.isEnabled()) {
-            Log.e(TAG, "Can't enable Bluetooth btadapter="+(btAdapter == null?"null":"oxi null")+" btadapter.enabled="+(!btAdapter.isEnabled()?"oxi enabled":"enabled"));
-            return;
-        }
-        scanner = btAdapter.getBluetoothLeScanner();
-    }
-
-//    private String fetchToken(String email) throws IOException {
-//        try {
-//            //TODO Fix deprecated
-//            return GoogleAuthUtil.getToken(getActivity(), email, Constants.AUTH_SCOPE);
-//        } catch (UserRecoverableAuthException e) {
-//            handleException(e);
-//        } catch (GoogleAuthException e) {
-//            Log.w(TAG, "Fatal Exception", e);
-//        }
-//
-//        return null;
-//    }
-
-//    public void handleException(final Exception e) {
-//        // Because this call comes from the AsyncTask, we must ensure that the following
-//        // code instead executes on the UI thread.
-//        runOnUiThread(new Runnable() {
-//            @Override
-//            public void run() {
-//                if (e instanceof GooglePlayServicesAvailabilityException) {
-//                    // The Google Play services APK is old, disabled, or not present.
-//                    // Show a dialog created by Google Play services that allows
-//                    // the user to update the APK
-//                    int statusCode = ((GooglePlayServicesAvailabilityException) e)
-//                            .getConnectionStatusCode();
-//                    Dialog dialog = GooglePlayServicesUtil.getErrorDialog(statusCode,
-//                            ListBeaconsFragment.this.getActivity(),
-//                            REQUEST_ERROR_RECOVER);
-//                    dialog.show();
-//                } else if (e instanceof UserRecoverableAuthException) {
-//                    // Unable to authenticate, such as when the user has not yet granted
-//                    // the app access to the account, but the user can fix this.
-//                    // Forward the user to an activity in Google Play services.
-//                    Intent intent = ((UserRecoverableAuthException) e).getIntent();
-//                    startActivityForResult(intent,
-//                            REQUEST_ERROR_RECOVER);
-//                }
-//            }
-//        });
-//    }
 }
