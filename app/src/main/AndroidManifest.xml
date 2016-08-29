@@ -49,7 +49,7 @@
             android:name=".GpsPositionFragment$FetchAddressIntentService"
             android:exported="false" />
 
-        <activity android:name=".RoomKeeperActivity"></activity>
+        <activity android:name=".roomkeeper.RoomKeeperActivity"></activity>
     </application>
 
 </manifest>

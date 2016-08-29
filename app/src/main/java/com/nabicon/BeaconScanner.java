@@ -27,7 +27,7 @@ public class BeaconScanner {
 
     }
 
-    static BluetoothLeScanner createScanner(Fragment fragment) {
+    public static BluetoothLeScanner createScanner(Fragment fragment) {
         BluetoothManager btManager = (BluetoothManager) fragment.getActivity().getSystemService(Context.BLUETOOTH_SERVICE);
         BluetoothAdapter btAdapter = btManager.getAdapter();
         if (btAdapter == null || !btAdapter.isEnabled()) {
@@ -42,17 +42,37 @@ public class BeaconScanner {
         return scanner;
     }
 
-    static void startScan(final ScanCallback scanCallback) {
-        scanner.startScan(scanCallback);
-        Log.i(TAG, "Start scan");
-        Runnable stopScanning = new Runnable() {
-            @Override
-            public void run() {
-                scanner.stopScan(scanCallback);
-                Log.i(TAG, "Stop scanning");
-            }
-        };
-        handler.postDelayed(stopScanning, 5000);
+    public static BluetoothLeScanner createScanner(Activity activity) {
+        BluetoothManager btManager = (BluetoothManager) activity.getSystemService(Context.BLUETOOTH_SERVICE);
+        BluetoothAdapter btAdapter = btManager.getAdapter();
+        if (btAdapter == null || !btAdapter.isEnabled()) {
+            Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            activity.startActivityForResult(enableBtIntent, Constants.REQUEST_CODE_ENABLE_BLE);
+        }
+        if (btAdapter == null || !btAdapter.isEnabled()) {
+            Log.e(TAG, "Can't enable Bluetooth btadapter=" + (btAdapter == null ? "null" : "oxi null") + " btadapter.enabled=" + (!btAdapter.isEnabled() ? "oxi enabled" : "enabled"));
+            return null;
+        }
+        scanner = btAdapter.getBluetoothLeScanner();
+        return scanner;
+    }
+
+    public static void startScan(final ScanCallback scanCallback) {
+        try {
+            scanner.startScan(scanCallback);
+            Log.i(TAG, "Start scan");
+            Runnable stopScanning = new Runnable() {
+                @Override
+                public void run() {
+                    scanner.stopScan(scanCallback);
+                    Log.i(TAG, "Stop scanning");
+                }
+            };
+            handler.postDelayed(stopScanning, 8000);
+        }
+        catch(Exception e){
+            Log.e(TAG, "Scanner is null. " + e.getMessage());
+        }
     }
 
 }

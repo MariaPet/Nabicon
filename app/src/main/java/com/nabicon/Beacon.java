@@ -16,28 +16,28 @@ public class Beacon implements Parcelable{
     private static final String TAG = Beacon.class.getSimpleName();
 
     // These constants are in the Proximity Service Status enum:
-    static final String STATUS_UNSPECIFIED = "STATUS_UNSPECIFIED";
-    static final String STATUS_ACTIVE = "ACTIVE";
-    static final String STATUS_INACTIVE = "INACTIVE";
-    static final String STATUS_DECOMMISSIONED = "DECOMMISSIONED";
-    static final String STABILITY_UNSPECIFIED = "STABILITY_UNSPECIFIED";
+    public static final String STATUS_UNSPECIFIED = "STATUS_UNSPECIFIED";
+    public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String STATUS_INACTIVE = "INACTIVE";
+    public static final String STATUS_DECOMMISSIONED = "DECOMMISSIONED";
+    public static final String STABILITY_UNSPECIFIED = "STABILITY_UNSPECIFIED";
 
     // These constants are convenience for this app:
-    static final String UNREGISTERED = "UNREGISTERED";
-    static final String NOT_AUTHORIZED = "NOT_AUTHORIZED";
+    public static final String UNREGISTERED = "UNREGISTERED";
+    public static final String NOT_AUTHORIZED = "NOT_AUTHORIZED";
 
-    String type;
-    byte[] id;
-    String status;
-    String placeId;
-    Double latitude;
-    Double longitude;
-    String expectedStability;
-    String description;
+    public String type;
+    public byte[] id;
+    public String status;
+    public String placeId;
+    public Double latitude;
+    public Double longitude;
+    public String expectedStability;
+    public String description;
     // This isn't really a beacon property, but it's useful to have it here so we can sort
     // the list of beacons during scanning so the closest and/or strongest is listed first.
     // It doesn't need to be persisted via the parcelable.
-    int rssi;
+    public int rssi;
 
 
     //TODO check why this should be here

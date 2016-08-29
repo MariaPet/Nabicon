@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
+import com.nabicon.roomkeeper.RoomKeeperActivity;
+
 
 public class MainActivity extends AppCompatActivity implements
         GpsPositionFragment.ConfigureBeaconsButtonListener,
