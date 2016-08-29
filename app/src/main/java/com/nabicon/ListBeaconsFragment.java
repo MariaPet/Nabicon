@@ -3,10 +3,6 @@ package com.nabicon;
 import android.accounts.AccountManager;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothManager;
-import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
@@ -16,8 +12,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.app.Fragment;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.ParcelUuid;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -29,12 +23,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.auth.GoogleAuthException;
-import com.google.android.gms.auth.GoogleAuthUtil;
-import com.google.android.gms.auth.GooglePlayServicesAvailabilityException;
-import com.google.android.gms.auth.UserRecoverableAuthException;
 import com.google.android.gms.common.AccountPicker;
-import com.google.android.gms.common.GooglePlayServicesUtil;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,8 +37,6 @@ import com.squareup.okhttp.Callback;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import static com.google.android.gms.internal.zzir.runOnUiThread;
-
 
 public class ListBeaconsFragment extends Fragment {
 
@@ -60,19 +47,7 @@ public class ListBeaconsFragment extends Fragment {
 
     //TODO Read all about it
     public final static String EXTRA_DESTINATION = "com.nabicon.DESTINATION";
-    // The Eddystone-UID frame type byte.
-    // See https://github.com/google/eddystone for more information.
-    private static final byte EDDYSTONE_UID_FRAME_TYPE = 0x00;
-    // The Eddystone Service UUID, 0xFEAA.
-    private static final ParcelUuid EDDYSTONE_SERVICE_UUID =
-            ParcelUuid.fromString("0000FEAA-0000-1000-8000-00805F9B34FB");
-    //TODO How does the comparator works?
-    private static final Comparator<Beacon> RSSI_COMPARATOR = new Comparator<Beacon>() {
-        @Override
-        public int compare(Beacon lhs, Beacon rhs) {
-            return ((Integer) rhs.rssi).compareTo(lhs.rssi);
-        }
-    };
+
 
     private SharedPreferences sharedPreferences;
     private ArrayList<Beacon> scannedBeaconsList;
@@ -107,13 +82,13 @@ public class ListBeaconsFragment extends Fragment {
                     Log.w(TAG, "Null ScanRecord for device " + result.getDevice().getAddress());
                     return;
                 }
-                byte[] serviceData = scanRecord.getServiceData(EDDYSTONE_SERVICE_UUID);
+                byte[] serviceData = scanRecord.getServiceData(Constants.EDDYSTONE_SERVICE_UUID);
                 if (serviceData == null) {
                     Log.w(TAG, "service data null");
                     return;
                 }
                 // We're only interested in the UID frame time since we need the beacon ID to register.
-                if (serviceData[0] != EDDYSTONE_UID_FRAME_TYPE) {
+                if (serviceData[0] != Constants.EDDYSTONE_UID_FRAME_TYPE) {
                     Log.w(TAG, "not eddystone uuid frame type");
                     return;
                 }
@@ -134,7 +109,7 @@ public class ListBeaconsFragment extends Fragment {
                 Log.e(TAG, "onScanFaile errorCode" + errorCode);
             }
         };
-        BeaconScanner.createScanner(getActivity());
+        BeaconScanner.createScanner(this);
     }
 
     @Override
@@ -255,7 +230,7 @@ public class ListBeaconsFragment extends Fragment {
                 }
             case Constants.REQUEST_CODE_ENABLE_BLE:
                 if (resultCode == Activity.RESULT_OK) {
-                    BeaconScanner.createScanner(getActivity());
+                    BeaconScanner.createScanner(this);
                 }
                 if (resultCode == Activity.RESULT_CANCELED) {
                     Log.w(TAG, "Please enable Bluetooth");
@@ -274,7 +249,7 @@ public class ListBeaconsFragment extends Fragment {
     //TODO Why does it have to be final?
     private void insertIntoListAndFetchStatus(final Beacon beacon) {
         arrayAdapter.add(beacon);
-        arrayAdapter.sort(RSSI_COMPARATOR);
+        arrayAdapter.sort(Constants.RSSI_COMPARATOR);
         Callback getBeaconCallback = new Callback() {
             @Override
             public void onFailure(com.squareup.okhttp.Request request, IOException e) {

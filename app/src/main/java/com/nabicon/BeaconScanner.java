@@ -1,6 +1,7 @@
 package com.nabicon;
 
 import android.app.Activity;
+import android.app.Fragment;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
@@ -26,12 +27,12 @@ public class BeaconScanner {
 
     }
 
-    static BluetoothLeScanner createScanner(Activity activity) {
-        BluetoothManager btManager = (BluetoothManager) activity.getSystemService(Context.BLUETOOTH_SERVICE);
+    static BluetoothLeScanner createScanner(Fragment fragment) {
+        BluetoothManager btManager = (BluetoothManager) fragment.getActivity().getSystemService(Context.BLUETOOTH_SERVICE);
         BluetoothAdapter btAdapter = btManager.getAdapter();
-        if(btAdapter == null || !btAdapter.isEnabled()) {
+        if (btAdapter == null || !btAdapter.isEnabled()) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            activity.startActivityForResult(enableBtIntent, Constants.REQUEST_CODE_ENABLE_BLE);
+            fragment.startActivityForResult(enableBtIntent, Constants.REQUEST_CODE_ENABLE_BLE);
         }
         if (btAdapter == null || !btAdapter.isEnabled()) {
             Log.e(TAG, "Can't enable Bluetooth btadapter=" + (btAdapter == null ? "null" : "oxi null") + " btadapter.enabled=" + (!btAdapter.isEnabled() ? "oxi enabled" : "enabled"));
