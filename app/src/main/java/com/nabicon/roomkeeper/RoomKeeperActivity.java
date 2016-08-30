@@ -103,6 +103,7 @@ public class RoomKeeperActivity extends AppCompatActivity {
         if (!accountName.equals("")) {
             new AuthorizedServiceTask(this, accountName).execute();
         }
+        scannedBeaconsList.clear();
         BeaconScanner.startScan(scanCallback);
     }
 
@@ -117,6 +118,7 @@ public class RoomKeeperActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
+            scannedBeaconsList.clear();
             BeaconScanner.startScan(scanCallback);
         }
         return true;
