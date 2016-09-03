@@ -14,4 +14,11 @@
         <item>MOBILE</item>
         <item>ROVING</item>
     </string-array>
+
+    <string-array name="to_do_list">
+        <item>Clean up</item>
+        <item>Grocery store</item>
+        <item>Cook dinner</item>
+    </string-array>
+
 </resources>
