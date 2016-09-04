@@ -8,8 +8,20 @@
     <ListView
         android:id="@+id/task_list_view"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" >
+        android:layout_height="wrap_content"
+        android:layout_weight="5">
     </ListView>
+
+    <ImageButton
+        android:id="@+id/new_task_button"
+        android:layout_width="50dp"
+        android:layout_height="0dp"
+        android:background="@null"
+        android:src="@drawable/round_button"
+        android:layout_gravity="end"
+        android:scaleType="fitEnd"
+        android:layout_weight="1"
+        android:layout_margin="@dimen/activity_horizontal_margin"/>
 
 
 </LinearLayout>
