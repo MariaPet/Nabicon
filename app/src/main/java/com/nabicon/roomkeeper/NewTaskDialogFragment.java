@@ -1,6 +1,7 @@
 package com.nabicon.roomkeeper;
 
 
+import android.app.Dialog;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.view.LayoutInflater;
@@ -26,6 +27,19 @@ public class NewTaskDialogFragment extends DialogFragment {
         getDialog().setTitle("New Task");
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_new_task_dialog, container, false);
+    }
+
+    @Override
+    public void onStart()
+    {
+        super.onStart();
+        Dialog dialog = getDialog();
+        if (dialog != null)
+        {
+            int width = ViewGroup.LayoutParams.MATCH_PARENT;
+            int height = ViewGroup.LayoutParams.MATCH_PARENT;
+            dialog.getWindow().setLayout(width, height);
+        }
     }
 
 }
