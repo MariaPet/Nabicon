@@ -1,12 +1,16 @@
 package com.nabicon.roomkeeper;
 
+import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -36,7 +40,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public class RoomKeeperActivity extends AppCompatActivity {
-
+    private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 1;
     private static final String TAG = RoomKeeperActivity.class.getSimpleName();
     private SharedPreferences sharedPreferences;
     private ArrayList<Beacon> scannedBeaconsList;
@@ -116,7 +120,17 @@ public class RoomKeeperActivity extends AppCompatActivity {
             new AuthorizedServiceTask(this, accountName).execute();
         }
         scannedBeaconsList.clear();
-        BeaconScanner.startScan(scanCallback);
+        checkManifestPermission(Manifest.permission.ACCESS_FINE_LOCATION);
+
+    }
+
+    private void checkManifestPermission(String permission) {
+        if (ContextCompat.checkSelfPermission(this, permission)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this,
+                    new String[]{permission},
+                    MY_PERMISSIONS_REQUEST_READ_CONTACTS);
+        }
     }
 
     @Override
@@ -131,9 +145,28 @@ public class RoomKeeperActivity extends AppCompatActivity {
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
             scannedBeaconsList.clear();
-            BeaconScanner.startScan(scanCallback);
+            checkManifestPermission(Manifest.permission.ACCESS_FINE_LOCATION);
         }
         return true;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_READ_CONTACTS: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    BeaconScanner.startScan(scanCallback);
+                } else {
+                    //TODO
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+        }
     }
 
     @Override
