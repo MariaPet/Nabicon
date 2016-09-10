@@ -51,7 +51,8 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        ImageButton newTaskButton = (ImageButton) getActivity().findViewById(R.id.new_task_button);
+        View fragmentView = inflater.inflate(R.layout.fragment_room_tasks, container, false);
+        ImageButton newTaskButton = (ImageButton) fragmentView.findViewById(R.id.new_task_button);
         newTaskButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -60,7 +61,7 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
                 newTaskDialogFragment.show(fm, "fragment_new_task_dialog");
             }
         });
-        return inflater.inflate(R.layout.fragment_room_tasks, container, false);
+        return fragmentView;
     }
 
     @Override
