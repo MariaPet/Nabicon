@@ -1,24 +1,24 @@
 package com.nabicon.roomkeeper;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
 import com.nabicon.R;
 
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link MainRoomFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link MainRoomFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+
 public class MainRoomFragment extends Fragment {
+
+    private static final String TAG = MainRoomFragment.class.getSimpleName();
     // TODO: Rename parameter arguments, choose names that match
     // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
     private static final String ARG_PARAM1 = "param1";
@@ -27,6 +27,7 @@ public class MainRoomFragment extends Fragment {
     // TODO: Rename and change types of parameters
     private String mParam1;
     private String mParam2;
+    private BroadcastReceiver broadcastReceiver;
 
     public MainRoomFragment() {
         // Required empty public constructor
@@ -57,6 +58,14 @@ public class MainRoomFragment extends Fragment {
             mParam1 = getArguments().getString(ARG_PARAM1);
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String description = intent.getStringExtra("roomBeacon");
+                Log.i(TAG, "Room Changed to: " + description);
+            }
+        };
+
     }
 
     @Override
@@ -66,4 +75,15 @@ public class MainRoomFragment extends Fragment {
         return inflater.inflate(R.layout.fragment_main_room, container, false);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        getActivity().registerReceiver(broadcastReceiver, new IntentFilter("fragmentupdater"));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        getActivity().unregisterReceiver(broadcastReceiver);
+    }
 }

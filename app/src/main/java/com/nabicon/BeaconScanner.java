@@ -21,6 +21,8 @@ public class BeaconScanner {
     private static BluetoothLeScanner scanner;
     // Receives the runnable that stops scanning after SCAN_TIME_MILLIS.
     private static final Handler handler = new Handler(Looper.getMainLooper());
+    //TODO find better way to initialize activity
+    private static Activity activity;
 
 
     private BeaconScanner() {
@@ -42,7 +44,9 @@ public class BeaconScanner {
         return scanner;
     }
 
-    public static BluetoothLeScanner createScanner(Activity activity) {
+    public static BluetoothLeScanner createScanner(Activity actvt) {
+
+        activity = actvt;
         BluetoothManager btManager = (BluetoothManager) activity.getSystemService(Context.BLUETOOTH_SERVICE);
         BluetoothAdapter btAdapter = btManager.getAdapter();
         if (btAdapter == null || !btAdapter.isEnabled()) {
@@ -66,6 +70,9 @@ public class BeaconScanner {
                 public void run() {
                     scanner.stopScan(scanCallback);
                     Log.i(TAG, "Stop scanning");
+                    Intent data = new Intent("fragmentupdater");
+                    data.putExtra("roomBeacon", "neo dwmatio");
+                    activity.sendBroadcast(data);
                 }
             };
             handler.postDelayed(stopScanning, 8000);
