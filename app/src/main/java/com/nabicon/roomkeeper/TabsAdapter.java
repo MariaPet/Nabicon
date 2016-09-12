@@ -11,24 +11,26 @@ import android.support.v4.app.FragmentPagerAdapter;
 public class TabsAdapter extends FragmentPagerAdapter {
 
     final int PAGE_COUNT = 3;
-    private String tabTitles[] = new String[] { "Main", "To-Do's", "Notes" };
-    private Context context;
+    private String tabTitles[] = new String[] { "Main", "Tasks", "Notes" };
+    private Fragment mainRoomFragment, tasksFragment, notesFragment;
 
     public TabsAdapter(FragmentManager fm, Context context) {
         super(fm);
-        this.context = context;
+        this.mainRoomFragment = MainRoomFragment.newInstance("", "");
+        this.tasksFragment = RoomTasksFragment.newInstance("", "");
+        this.notesFragment = RoomNotesFragment.newInstance("", "");
     }
 
     @Override
     public Fragment getItem(int position) {
         if (position == 0) {
-            return MainRoomFragment.newInstance("", "");
+            return this.mainRoomFragment;
         }
         else if (position == 1) {
-            return RoomTasksFragment.newInstance("", "");
+            return this.tasksFragment;
         }
         else {
-            return RoomNotesFragment.newInstance("", "");
+            return this.notesFragment;
         }
     }
 
