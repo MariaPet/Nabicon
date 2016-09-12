@@ -10,7 +10,9 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -18,8 +20,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
 
 import com.nabicon.AuthorizedServiceTask;
 import com.nabicon.Beacon;
@@ -40,7 +40,7 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public class RoomKeeperActivity extends AppCompatActivity {
-    private static final int MY_PERMISSIONS_REQUEST_READ_CONTACTS = 1;
+    private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
     private static final String TAG = RoomKeeperActivity.class.getSimpleName();
     private SharedPreferences sharedPreferences;
     private ArrayList<Beacon> scannedBeaconsList;
@@ -50,6 +50,8 @@ public class RoomKeeperActivity extends AppCompatActivity {
     ViewPager viewPager;
     Toolbar toolbar;
     ProximityBeacon client;
+
+    public Beacon roomBeacon;
 
 
     @Override
@@ -121,7 +123,6 @@ public class RoomKeeperActivity extends AppCompatActivity {
         }
         scannedBeaconsList.clear();
         checkManifestPermission(Manifest.permission.ACCESS_FINE_LOCATION);
-
     }
 
     private void checkManifestPermission(String permission) {
@@ -129,7 +130,10 @@ public class RoomKeeperActivity extends AppCompatActivity {
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
                     new String[]{permission},
-                    MY_PERMISSIONS_REQUEST_READ_CONTACTS);
+                    PERMISSION_REQUEST_FINE_LOCATION);
+        }
+        else {
+            BeaconScanner.startScan(scanCallback);
         }
     }
 
@@ -154,10 +158,11 @@ public class RoomKeeperActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
         switch (requestCode) {
-            case MY_PERMISSIONS_REQUEST_READ_CONTACTS: {
+            case PERMISSION_REQUEST_FINE_LOCATION: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    //TODO remove startScan from here
                     BeaconScanner.startScan(scanCallback);
                 } else {
                     //TODO
@@ -228,13 +233,13 @@ public class RoomKeeperActivity extends AppCompatActivity {
                 }
                 int pos = scannedBeaconsList.indexOf(beacon);
                 scannedBeaconsList.set(pos, fetchedBeacon);
-                String description = scannedBeaconsList.get(0).description;
+                roomBeacon = scannedBeaconsList.get(0);
+                String description = roomBeacon.description;
                 Log.i(TAG, "Room: " + description);
                 toolbar.setTitle(description);
             }
         };
         client.getBeacon(getBeaconCallback, beacon.getBeaconName());
-
     }
 
 }
