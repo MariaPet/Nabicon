@@ -12,8 +12,8 @@ import com.nabicon.roomkeeper.RoomKeeperActivity;
 
 public class MainActivity extends AppCompatActivity implements
         GpsPositionFragment.ConfigureBeaconsButtonListener,
-        GpsPositionFragment.StartButtonListener,
-        ListBeaconsFragment.ManageBeaconListener {
+        GpsPositionFragment.StartButtonListener {
+//        ListBeaconsFragment.ManageBeaconListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
     private FragmentManager fragmentManager = getFragmentManager();
@@ -34,10 +34,10 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onConfigureBeaconsClicked() {
-        fragmentManager.beginTransaction().
-                replace(R.id.container, new ListBeaconsFragment()).
-                addToBackStack(GpsPositionFragment.class.getSimpleName()).
-                commit();
+//        fragmentManager.beginTransaction().
+//                replace(R.id.container, new ListBeaconsFragment()).
+//                addToBackStack(GpsPositionFragment.class.getSimpleName()).
+//                commit();
 
     }
 
@@ -47,15 +47,15 @@ public class MainActivity extends AppCompatActivity implements
         startActivity(i);
     }
 
-    @Override
-    public void onBeaconItemClicked(Bundle bundle) {
-        ManageBeaconFragment fragment = new ManageBeaconFragment();
-        fragment.setArguments(bundle);
-        fragmentManager.beginTransaction().
-                replace(R.id.container, fragment).
-                addToBackStack(ListBeaconsFragment.class.getSimpleName()).
-                commit();
-    }
+//    @Override
+//    public void onBeaconItemClicked(Bundle bundle) {
+//        ManageBeaconFragment fragment = new ManageBeaconFragment();
+//        fragment.setArguments(bundle);
+//        fragmentManager.beginTransaction().
+//                replace(R.id.container, fragment).
+//                addToBackStack(ListBeaconsFragment.class.getSimpleName()).
+//                commit();
+//    }
 
 
 }
