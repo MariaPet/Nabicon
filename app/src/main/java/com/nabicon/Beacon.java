@@ -2,6 +2,7 @@ package com.nabicon;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
 import com.google.android.gms.maps.model.LatLng;
 
@@ -40,11 +41,10 @@ public class Beacon implements Parcelable{
     public int rssi;
 
 
-    //TODO check why this should be here
     protected Beacon(Parcel source) {
         type = source.readString();
-        int len = source.readInt();
-        id = new byte[len];
+        //TODO fix hardcoded int
+        id = new byte[16];
         //TODO what does this statement do?
         source.readByteArray(id);
         status = source.readString();

@@ -20,6 +20,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.nabicon.AuthorizedServiceTask;
+import com.nabicon.Beacon;
 import com.nabicon.BeaconScanner;
 import com.nabicon.Constants;
 import com.nabicon.R;
@@ -48,8 +49,13 @@ public class RoomKeeperActivity extends AppCompatActivity {
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                String description = intent.getStringExtra("roomBeacon");
-                toolbar.setTitle(description);
+                Beacon roomBeacon = intent.getExtras().getParcelable("roomBeacon");
+                if (roomBeacon != null) {
+                    toolbar.setTitle(roomBeacon.description);
+                }
+                else {
+                    toolbar.setTitle("Please scan again");
+                }
             }
         };
         beaconScanner.createScanner();

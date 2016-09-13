@@ -13,6 +13,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import com.nabicon.Beacon;
 import com.nabicon.R;
 
 
@@ -61,8 +62,10 @@ public class MainRoomFragment extends Fragment {
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                String description = intent.getStringExtra("roomBeacon");
-                Log.i(TAG, "Room Changed to: " + description);
+                Beacon roomBeacon = intent.getExtras().getParcelable("roomBeacon");
+                if (roomBeacon != null) {
+                    Log.i(TAG, "Room Changed to: " + roomBeacon.description);
+                }
             }
         };
 

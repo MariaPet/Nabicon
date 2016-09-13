@@ -126,14 +126,15 @@ public class BeaconScanner {
                 public void run() {
                     scanner.stopScan(scanCallback);
                     Log.i(TAG, "Stop scanning");
-                    Intent data = new Intent("fragmentupdater");
-                    if (roomBeacon != null) {
-                        data.putExtra("roomBeacon", roomBeacon.description);
-                    }
-                    else {
-                        data.putExtra("roomBeacon", "Please scan again");
-                    }
-                    activity.sendBroadcast(data);
+//                    Intent data = new Intent("fragmentupdater");
+//                    if (roomBeacon != null) {
+//                        data.putExtra("roomBeacon", roomBeacon);
+//                        activity.sendBroadcast(data);
+//                        Log.i(TAG, "To roomBeacon den einai null prin stalthei");
+//                    }
+//                    else {
+//                        Log.e(TAG, "roomBeacon is null!");
+//                    }
                 }
             };
             handler.postDelayed(stopScanning, 8000);
@@ -191,6 +192,9 @@ public class BeaconScanner {
                 roomBeacon = scannedBeaconsList.get(0);
                 String description = roomBeacon.description;
                 Log.i(TAG, "Room: " + description);
+                Intent data = new Intent("fragmentupdater");
+                data.putExtra("roomBeacon", roomBeacon);
+                activity.sendBroadcast(data);
             }
         };
         client.getBeacon(getBeaconCallback, beacon.getBeaconName());
