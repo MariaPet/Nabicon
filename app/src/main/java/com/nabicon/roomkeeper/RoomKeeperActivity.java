@@ -2,9 +2,6 @@ package com.nabicon.roomkeeper;
 
 import android.Manifest;
 import android.app.Activity;
-import android.bluetooth.le.ScanCallback;
-import android.bluetooth.le.ScanRecord;
-import android.bluetooth.le.ScanResult;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -13,9 +10,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -25,22 +20,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 
 import com.nabicon.AuthorizedServiceTask;
-import com.nabicon.Beacon;
 import com.nabicon.BeaconScanner;
 import com.nabicon.Constants;
 import com.nabicon.R;
-import com.nabicon.Utils;
-import com.nabiconproximitybeacon.ProximityBeacon;
-import com.nabiconproximitybeacon.ProximityBeaconImpl;
-import com.squareup.okhttp.Callback;
-
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 
 public class RoomKeeperActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
@@ -48,16 +30,10 @@ public class RoomKeeperActivity extends AppCompatActivity {
     private SharedPreferences sharedPreferences;
     private BeaconScanner beaconScanner;
     private BroadcastReceiver broadcastReceiver;
-//    private ArrayList<Beacon> scannedBeaconsList;
-//    private ScanCallback scanCallback;
 
     TabsAdapter tabsAdapter;
     ViewPager viewPager;
     Toolbar toolbar;
-//    ProximityBeacon client;
-
-//    public Beacon roomBeacon;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,46 +52,7 @@ public class RoomKeeperActivity extends AppCompatActivity {
                 toolbar.setTitle(description);
             }
         };
-//        client = new ProximityBeaconImpl(this, accountName);
-//        scannedBeaconsList = new ArrayList<>();
-//        scanCallback = new ScanCallback() {
-//            @Override
-//            public void onScanResult(int callbackType, ScanResult result) {
-//                super.onScanResult(callbackType, result);
-//                ScanRecord scanRecord = result.getScanRecord();
-//                if (scanRecord == null) {
-//                    Log.w(TAG, "Null ScanRecord for device " + result.getDevice().getAddress());
-//                    return;
-//                }
-//                byte[] serviceData = scanRecord.getServiceData(Constants.EDDYSTONE_SERVICE_UUID);
-//                if (serviceData == null) {
-//                    Log.w(TAG, "service data null");
-//                    return;
-//                }
-//                // We're only interested in the UID frame time since we need the beacon ID to register.
-//                if (serviceData[0] != Constants.EDDYSTONE_UID_FRAME_TYPE) {
-//                    Log.w(TAG, "not eddystone uuid frame type");
-//                    return;
-//                }
-//                // Extract the beacon ID from the service data. Offset 0 is the frame type, 1 is the
-//                // Tx power, and the next 16 are the ID.
-//                // See https://github.com/google/eddystone/eddystone-uid for more information.
-//                byte[] id = Arrays.copyOfRange(serviceData, 2, 18);
-//                if (arrayListContainsId(scannedBeaconsList, id)) {
-//                    return;
-//                }
-//                Log.i(TAG, "!!!!!!id " + Utils.toHexString(id) + ", rssi " + result.getRssi());
-//
-//                Beacon beacon = new Beacon("EDDYSTONE", id, Beacon.STATUS_UNSPECIFIED, result.getRssi());
-//                insertIntoListAndFetchStatus(beacon);
-//            }
-//            @Override
-//            public void onScanFailed(int errorCode) {
-//                Log.e(TAG, "onScanFaile errorCode" + errorCode);
-//            }
-//        };
         beaconScanner.createScanner();
-
         tabsAdapter = new TabsAdapter(getSupportFragmentManager(), RoomKeeperActivity.this);
         viewPager = (ViewPager) findViewById(R.id.pager);
         viewPager.setAdapter(tabsAdapter);
@@ -153,7 +90,6 @@ public class RoomKeeperActivity extends AppCompatActivity {
                     PERMISSION_REQUEST_FINE_LOCATION);
         }
         else {
-//            scannedBeaconsList.clear();
             beaconScanner.startScan();
         }
     }
@@ -169,7 +105,6 @@ public class RoomKeeperActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
-//            scannedBeaconsList.clear();
             checkManifestPermission(Manifest.permission.ACCESS_FINE_LOCATION);
         }
         return true;
@@ -185,7 +120,6 @@ public class RoomKeeperActivity extends AppCompatActivity {
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     //TODO remove startScan from here
                     beaconScanner.startScan();
-//                    BeaconScanner.startScan(scanCallback);
                 } else {
                     //TODO
                     // permission denied, boo! Disable the
@@ -209,59 +143,4 @@ public class RoomKeeperActivity extends AppCompatActivity {
                 }
         }
     }
-
-//    private boolean arrayListContainsId(ArrayList<Beacon> list, byte[] id) {
-//        for (Beacon beacon: list) {
-//            if (Arrays.equals(beacon.id, id)) {
-//                return true;
-//            }
-//        }
-//        return false;
-//    }
-//
-//    //TODO Why does it have to be final?
-//    private void insertIntoListAndFetchStatus(final Beacon beacon) {
-//        scannedBeaconsList.add(beacon);
-//        Collections.sort(scannedBeaconsList, Constants.RSSI_COMPARATOR);
-//        Callback getBeaconCallback = new Callback() {
-//            @Override
-//            public void onFailure(com.squareup.okhttp.Request request, IOException e) {
-//                Log.e(TAG, String.format("Failed request: %s, IOException %s", request, e));
-//            }
-//            @Override
-//            public void onResponse(com.squareup.okhttp.Response response) throws IOException {
-//                Beacon fetchedBeacon;
-//                //TODO what do these codes mean?
-//                switch (response.code()) {
-//                    case 200:
-//                        try {
-//                            String body = response.body().string();
-//                            fetchedBeacon = new Beacon(new JSONObject(body));
-//                        }
-//                        catch (JSONException e) {
-//                            Log.e(TAG, "JSONException", e);
-//                            return;
-//                        }
-//                        break;
-//                    case 403:
-//                        fetchedBeacon = new Beacon(beacon.type, beacon.id, Beacon.NOT_AUTHORIZED, beacon.rssi);
-//                        break;
-//                    case 404:
-//                        fetchedBeacon = new Beacon(beacon.type, beacon.id, Beacon.UNREGISTERED, beacon.rssi);
-//                        break;
-//                    default:
-//                        Log.e(TAG, "Unhandled beacon service response: " + response);
-//                        return;
-//                }
-//                int pos = scannedBeaconsList.indexOf(beacon);
-//                scannedBeaconsList.set(pos, fetchedBeacon);
-//                roomBeacon = scannedBeaconsList.get(0);
-//                String description = roomBeacon.description;
-//                Log.i(TAG, "Room: " + description);
-//                toolbar.setTitle(description);
-//            }
-//        };
-//        client.getBeacon(getBeaconCallback, beacon.getBeaconName());
-//    }
-
 }
