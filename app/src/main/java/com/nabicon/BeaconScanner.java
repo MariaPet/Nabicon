@@ -44,9 +44,9 @@ public class BeaconScanner {
     ProximityBeacon client;
 
 
-    public BeaconScanner(Activity activity, String accountName) {
+    public BeaconScanner(Activity activity, ProximityBeacon client) {
         this.activity = activity;
-        client = new ProximityBeaconImpl(this.activity, accountName);
+        this.client = client;
         scannedBeaconsList = new ArrayList<>();
     }
 
@@ -126,15 +126,6 @@ public class BeaconScanner {
                 public void run() {
                     scanner.stopScan(scanCallback);
                     Log.i(TAG, "Stop scanning");
-//                    Intent data = new Intent("fragmentupdater");
-//                    if (roomBeacon != null) {
-//                        data.putExtra("roomBeacon", roomBeacon);
-//                        activity.sendBroadcast(data);
-//                        Log.i(TAG, "To roomBeacon den einai null prin stalthei");
-//                    }
-//                    else {
-//                        Log.e(TAG, "roomBeacon is null!");
-//                    }
                 }
             };
             handler.postDelayed(stopScanning, 8000);

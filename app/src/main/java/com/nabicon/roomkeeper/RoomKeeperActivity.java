@@ -10,6 +10,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
@@ -24,17 +25,34 @@ import com.nabicon.Beacon;
 import com.nabicon.BeaconScanner;
 import com.nabicon.Constants;
 import com.nabicon.R;
+import com.nabicon.Utils;
+import com.nabiconproximitybeacon.ProximityBeaconImpl;
+import com.squareup.okhttp.Callback;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
 
-public class RoomKeeperActivity extends AppCompatActivity {
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+
+public class RoomKeeperActivity extends AppCompatActivity implements NewTaskDialogFragment.OnNewTaskButtonListener{
     private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
     private static final String TAG = RoomKeeperActivity.class.getSimpleName();
     private SharedPreferences sharedPreferences;
     private BeaconScanner beaconScanner;
     private BroadcastReceiver broadcastReceiver;
+    private Beacon roomBeacon;
+    private MainRoomFragment mainRoomFragment;
+    private RoomTasksFragment tasksFragment;
+    private RoomNotesFragment notesFragment;
 
     TabsAdapter tabsAdapter;
     ViewPager viewPager;
     Toolbar toolbar;
+
+    ProximityBeaconImpl client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,11 +63,12 @@ public class RoomKeeperActivity extends AppCompatActivity {
         sharedPreferences = this.getSharedPreferences(Constants.PREFS_NAME, 0);
         // Set the account name from the shared prefs if we ever set it before.
         String accountName = sharedPreferences.getString("accountName", "");
-        beaconScanner = new BeaconScanner(this, accountName);
+        client = new ProximityBeaconImpl(this, accountName);
+        beaconScanner = new BeaconScanner(this, client);
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Beacon roomBeacon = intent.getExtras().getParcelable("roomBeacon");
+                roomBeacon = intent.getExtras().getParcelable("roomBeacon");
                 if (roomBeacon != null) {
                     toolbar.setTitle(roomBeacon.description);
                 }
@@ -59,7 +78,10 @@ public class RoomKeeperActivity extends AppCompatActivity {
             }
         };
         beaconScanner.createScanner();
-        tabsAdapter = new TabsAdapter(getSupportFragmentManager(), RoomKeeperActivity.this);
+        mainRoomFragment = MainRoomFragment.newInstance("", "");
+        tasksFragment = RoomTasksFragment.newInstance(client);
+        notesFragment = RoomNotesFragment.newInstance("", "");
+        tabsAdapter = new TabsAdapter(getSupportFragmentManager(), mainRoomFragment, tasksFragment, notesFragment);
         viewPager = (ViewPager) findViewById(R.id.pager);
         viewPager.setAdapter(tabsAdapter);
         // Give the TabLayout the ViewPager
@@ -148,5 +170,10 @@ public class RoomKeeperActivity extends AppCompatActivity {
                     Log.w(TAG, "Please enable Bluetooth");
                 }
         }
+    }
+
+    @Override
+    public void onNewTaskButtonClicked(String task) {
+        tasksFragment.onNewTaskButtonClicked(task);
     }
 }

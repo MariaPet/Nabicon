@@ -5,6 +5,8 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 
+import com.nabiconproximitybeacon.ProximityBeaconImpl;
+
 /**
  * Created by mariloo on 30/8/2016.
  */
@@ -14,11 +16,13 @@ public class TabsAdapter extends FragmentPagerAdapter {
     private String tabTitles[] = new String[] { "Main", "Tasks", "Notes" };
     private Fragment mainRoomFragment, tasksFragment, notesFragment;
 
-    public TabsAdapter(FragmentManager fm, Context context) {
+    public TabsAdapter(FragmentManager fm, MainRoomFragment mainRoomFragment,
+                       RoomTasksFragment roomTasksFragment,
+                       RoomNotesFragment roomNotesFragment) {
         super(fm);
-        this.mainRoomFragment = MainRoomFragment.newInstance("", "");
-        this.tasksFragment = RoomTasksFragment.newInstance("", "");
-        this.notesFragment = RoomNotesFragment.newInstance("", "");
+        this.mainRoomFragment = mainRoomFragment;
+        this.tasksFragment = roomTasksFragment;
+        this.notesFragment = roomNotesFragment;
     }
 
     @Override

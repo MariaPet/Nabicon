@@ -1,8 +1,13 @@
 package com.nabicon.roomkeeper;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,40 +16,58 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.nabicon.Beacon;
 import com.nabicon.R;
+import com.nabicon.Utils;
+import com.nabiconproximitybeacon.ProximityBeaconImpl;
+import com.squareup.okhttp.Callback;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 public class RoomTasksFragment extends Fragment implements AdapterView.OnItemClickListener {
 
+    private static final String TAG = RoomTasksFragment.class.getSimpleName();
     private static final String ARG_PARAM1 = "param1";
     private static final String ARG_PARAM2 = "param2";
 
-    private String mParam1;
-    private String mParam2;
+    private BroadcastReceiver broadcastReceiver;
+    Beacon roomBeacon;
+    private String namespace;
+    TasksArrayAdapter adapter;
+
+    static ProximityBeaconImpl client;
 
     public RoomTasksFragment() {
         // Required empty public constructor
     }
 
 
-    public static RoomTasksFragment newInstance(String param1, String param2) {
+    public static RoomTasksFragment newInstance(ProximityBeaconImpl clnt) {
         RoomTasksFragment fragment = new RoomTasksFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
+        client = clnt;
         return fragment;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                roomBeacon = intent.getExtras().getParcelable("roomBeacon");
+                if (roomBeacon == null) {
+                    Toast.makeText(getActivity(), "Please scan again", Toast.LENGTH_SHORT).show();
+                }
+            }
+        };
     }
 
     @Override
@@ -61,6 +84,38 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
                 newTaskDialogFragment.show(fm, "fragment_new_task_dialog");
             }
         });
+        Callback listNamespacesCallback = new Callback() {
+            @Override
+            public void onFailure(Request request, IOException e) {
+                Log.e(TAG, "Failed request: " + request, e);
+            }
+
+            @Override
+            public void onResponse(Response response) throws IOException {
+                String body = response.body().string();
+                if (response.isSuccessful()) {
+                    try {
+                        JSONObject json = new JSONObject(body);
+                        JSONArray namespaces = json.getJSONArray("namespaces");
+                        // At present there can be only one namespace.
+                        String tmp = namespaces.getJSONObject(0).getString("namespaceName");
+                        if (tmp.startsWith("namespaces/")) {
+                            namespace = tmp.substring("namespaces/".length());
+                        } else {
+                            namespace = tmp;
+                        }
+//                        redraw();
+                    }
+                    catch (JSONException e) {
+                        Log.e(TAG, "JSONException", e);
+                    }
+                }
+                else {
+                    Log.e(TAG, "Unsuccessful listNamespaces request: " + body);
+                }
+            }
+        };
+        client.listNamespaces(listNamespacesCallback);
         return fragmentView;
     }
 
@@ -68,7 +123,7 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
         ArrayList<String> tasks = new ArrayList<>(Arrays.asList(getActivity().getResources().getStringArray(R.array.to_do_list)));
-        TasksArrayAdapter adapter = new TasksArrayAdapter(getActivity(), R.layout.beacon_list_item, R.id.task_id, tasks);
+        adapter = new TasksArrayAdapter(getActivity(), R.layout.beacon_list_item, R.id.task_id, tasks);
         ListView listView = (ListView) getActivity().findViewById(R.id.task_list_view);
         listView.setAdapter(adapter);
         listView.setOnItemClickListener(this);
@@ -79,5 +134,58 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Toast.makeText(getActivity(), "Item: " + position, Toast.LENGTH_SHORT)
                 .show();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        getActivity().registerReceiver(broadcastReceiver, new IntentFilter("fragmentupdater"));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        getActivity().unregisterReceiver(broadcastReceiver);
+    }
+
+    public void onNewTaskButtonClicked(String task) {
+        JSONObject body = buildCreateAttachmentJsonBody(namespace, "task", task);
+        Callback createAttachmentCallback = new Callback() {
+            @Override
+            public void onFailure(Request request, IOException e) {
+                Log.e(TAG, "Failed request: " + request, e);
+            }
+
+            @Override
+            public void onResponse(Response response) throws IOException {
+                String body = response.body().string();
+                if (response.isSuccessful()) {
+                    try {
+                        JSONObject json = new JSONObject(body);
+                        String dataStr = json.getString("data");
+                        String base64Decoded = new String(Utils.base64Decode(dataStr));
+                        adapter.add(base64Decoded);
+                        adapter.notifyDataSetChanged();
+                    } catch (JSONException e) {
+                        Log.e(TAG, "JSONException in building attachment data", e);
+                    }
+                } else {
+                    Log.e(TAG, "Unsuccessful createAttachment request: " + body);
+                }
+            }
+        };
+
+        client.createAttachment(createAttachmentCallback, roomBeacon.getBeaconName(), body);
+    }
+
+    private JSONObject buildCreateAttachmentJsonBody(String namespace, String type, String data) {
+        try {
+            return new JSONObject().put("namespacedType", namespace + "/" + type)
+                    .put("data", Utils.base64Encode(data.getBytes()));
+        }
+        catch (JSONException e) {
+            Log.e(TAG, "JSONException", e);
+        }
+        return null;
     }
 }
