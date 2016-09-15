@@ -42,6 +42,8 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
     Beacon roomBeacon;
     private String namespace;
     TasksArrayAdapter adapter;
+    private ArrayList<String> tasks;
+
 
     static ProximityBeaconImpl client;
 
@@ -59,12 +61,18 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        tasks = new ArrayList<>();
+        tasks.add("I shouldn't be in the list");
+        adapter = new TasksArrayAdapter(getActivity(), R.layout.beacon_list_item, R.id.task_id, tasks);
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 roomBeacon = intent.getExtras().getParcelable("roomBeacon");
                 if (roomBeacon == null) {
                     Toast.makeText(getActivity(), "Please scan again", Toast.LENGTH_SHORT).show();
+                }
+                else {
+                    listAttachments();
                 }
             }
         };
@@ -116,18 +124,54 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
             }
         };
         client.listNamespaces(listNamespacesCallback);
+        ListView listView = (ListView) fragmentView.findViewById(R.id.task_list_view);
+        listView.setAdapter(adapter);
+        listView.setOnItemClickListener(this);
         return fragmentView;
     }
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        ArrayList<String> tasks = new ArrayList<>(Arrays.asList(getActivity().getResources().getStringArray(R.array.to_do_list)));
-        adapter = new TasksArrayAdapter(getActivity(), R.layout.beacon_list_item, R.id.task_id, tasks);
-        ListView listView = (ListView) getActivity().findViewById(R.id.task_list_view);
-        listView.setAdapter(adapter);
-        listView.setOnItemClickListener(this);
+    }
 
+    private void listAttachments() {
+        Callback listAttachmentsCallback = new Callback() {
+            @Override
+            public void onFailure(Request request, IOException e) {
+                Log.e(TAG, "Failed request: " + request, e);
+            }
+
+            @Override
+            public void onResponse(Response response) throws IOException {
+                String body = response.body().string();
+                if (response.isSuccessful()) {
+                    tasks.clear();
+                    try {
+                        JSONObject json = new JSONObject(body);
+                        if (json.length() == 0) {  // No attachment data
+                            Log.w(TAG, "den vrike attachments");
+                        }
+                        JSONArray attachments = json.getJSONArray("attachments");
+                        for (int i = 0; i < attachments.length(); i++) {
+                            JSONObject attachment = attachments.getJSONObject(i);
+                            String[] namespacedType = attachment.getString("namespacedType").split("/");
+                            String type = namespacedType[1];
+
+                            String dataStr = attachment.getString("data");
+                            String base64Decoded = new String(Utils.base64Decode(dataStr));
+                            tasks.add(base64Decoded);
+                        }
+                        adapter.notifyDataSetChanged();
+                    } catch (JSONException e) {
+                        Log.e(TAG, "JSONException in fetching attachments", e);
+                    }
+                } else {
+                    Log.e(TAG, "Unsuccessful listAttachments request: " + body);
+                }
+            }
+        };
+        client.listAttachments(listAttachmentsCallback, roomBeacon.getBeaconName());
     }
 
     @Override
