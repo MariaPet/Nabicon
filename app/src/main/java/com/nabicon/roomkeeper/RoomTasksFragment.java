@@ -30,15 +30,13 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class RoomTasksFragment extends Fragment implements AdapterView.OnItemClickListener {
 
     private static final String TAG = RoomTasksFragment.class.getSimpleName();
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
 
-    private BroadcastReceiver broadcastReceiver;
+    private BroadcastReceiver scanBroadcastReceiver;
+    private BroadcastReceiver deleteTaskBroadcastReceiver;
     Beacon roomBeacon;
     private String namespace;
     TasksArrayAdapter adapter;
@@ -62,9 +60,8 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         tasks = new ArrayList<>();
-        tasks.add("I shouldn't be in the list");
-        adapter = new TasksArrayAdapter(getActivity(), R.layout.beacon_list_item, R.id.task_id, tasks);
-        broadcastReceiver = new BroadcastReceiver() {
+        adapter = new TasksArrayAdapter(getActivity(), R.id.checked_task_item, tasks);
+        scanBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 roomBeacon = intent.getExtras().getParcelable("roomBeacon");
@@ -74,6 +71,14 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
                 else {
                     listAttachments();
                 }
+            }
+        };
+        deleteTaskBroadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                String deletedTask = intent.getStringExtra("deletedTask");
+                int position = intent.getIntExtra("taskPosition", 0);
+                deleteAttachment(deletedTask, position);
             }
         };
     }
@@ -112,7 +117,6 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
                         } else {
                             namespace = tmp;
                         }
-//                        redraw();
                     }
                     catch (JSONException e) {
                         Log.e(TAG, "JSONException", e);
@@ -124,9 +128,9 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
             }
         };
         client.listNamespaces(listNamespacesCallback);
+
         ListView listView = (ListView) fragmentView.findViewById(R.id.task_list_view);
         listView.setAdapter(adapter);
-        listView.setOnItemClickListener(this);
         return fragmentView;
     }
 
@@ -157,10 +161,12 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
                             JSONObject attachment = attachments.getJSONObject(i);
                             String[] namespacedType = attachment.getString("namespacedType").split("/");
                             String type = namespacedType[1];
-
-                            String dataStr = attachment.getString("data");
-                            String base64Decoded = new String(Utils.base64Decode(dataStr));
-                            tasks.add(base64Decoded);
+                            if (type.equals("task")) {
+                                String attachmentName = attachment.getString("attachmentName");
+                                String dataStr = attachment.getString("data");
+                                String base64Decoded = new String(Utils.base64Decode(dataStr));
+                                tasks.add(attachmentName + "$" +base64Decoded);
+                            }
                         }
                         adapter.notifyDataSetChanged();
                     } catch (JSONException e) {
@@ -174,6 +180,28 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
         client.listAttachments(listAttachmentsCallback, roomBeacon.getBeaconName());
     }
 
+    public void deleteAttachment(String attachmentName, final int pos) {
+        Callback deleteAttachmentCallback = new Callback() {
+            @Override
+            public void onFailure(Request request, IOException e) {
+                Log.e(TAG, "Failed request: " + request, e);
+            }
+
+            @Override
+            public void onResponse(Response response) throws IOException {
+                if (response.isSuccessful()) {
+                    Toast.makeText(getActivity(), "Task deleted successfully", Toast.LENGTH_SHORT).show();
+                    tasks.remove(pos);
+                    adapter.notifyDataSetChanged();
+                } else {
+                    String body = response.body().string();
+                    Log.e(TAG, "Unsuccessful deleteAttachment request: " + body);
+                }
+            }
+        };
+        client.deleteAttachment(deleteAttachmentCallback, attachmentName);
+    }
+
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
         Toast.makeText(getActivity(), "Item: " + position, Toast.LENGTH_SHORT)
@@ -183,13 +211,15 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
     @Override
     public void onResume() {
         super.onResume();
-        getActivity().registerReceiver(broadcastReceiver, new IntentFilter("fragmentupdater"));
+        getActivity().registerReceiver(scanBroadcastReceiver, new IntentFilter("fragmentupdater"));
+        getActivity().registerReceiver(deleteTaskBroadcastReceiver, new IntentFilter("deleteTask"));
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        getActivity().unregisterReceiver(broadcastReceiver);
+        getActivity().unregisterReceiver(scanBroadcastReceiver);
+        getActivity().unregisterReceiver(deleteTaskBroadcastReceiver);
     }
 
     public void onNewTaskButtonClicked(String task) {
@@ -206,9 +236,10 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
                 if (response.isSuccessful()) {
                     try {
                         JSONObject json = new JSONObject(body);
+                        String attachmentName = json.getString("attachmentName");
                         String dataStr = json.getString("data");
                         String base64Decoded = new String(Utils.base64Decode(dataStr));
-                        adapter.add(base64Decoded);
+                        tasks.add(attachmentName + "$" +base64Decoded);
                         adapter.notifyDataSetChanged();
                     } catch (JSONException e) {
                         Log.e(TAG, "JSONException in building attachment data", e);
