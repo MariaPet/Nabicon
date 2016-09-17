@@ -31,9 +31,10 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class RoomTasksFragment extends Fragment implements AdapterView.OnItemClickListener {
+public class RoomTasksFragment extends Fragment {
 
     private static final String TAG = RoomTasksFragment.class.getSimpleName();
+    private static final String TASK_ATTACHMENT_KEY = "task";
 
     private BroadcastReceiver scanBroadcastReceiver;
     private BroadcastReceiver deleteTaskBroadcastReceiver;
@@ -128,15 +129,23 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
             }
         };
         client.listNamespaces(listNamespacesCallback);
-
         ListView listView = (ListView) fragmentView.findViewById(R.id.task_list_view);
         listView.setAdapter(adapter);
         return fragmentView;
     }
 
     @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    public void onResume() {
+        super.onResume();
+        getActivity().registerReceiver(scanBroadcastReceiver, new IntentFilter("fragmentupdater"));
+        getActivity().registerReceiver(deleteTaskBroadcastReceiver, new IntentFilter("deleteTask"));
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        getActivity().unregisterReceiver(scanBroadcastReceiver);
+        getActivity().unregisterReceiver(deleteTaskBroadcastReceiver);
     }
 
     private void listAttachments() {
@@ -154,14 +163,15 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
                     try {
                         JSONObject json = new JSONObject(body);
                         if (json.length() == 0) {  // No attachment data
-                            Log.w(TAG, "den vrike attachments");
+                            Log.i(TAG, "Beacon has no attachments");
+                            return;
                         }
                         JSONArray attachments = json.getJSONArray("attachments");
                         for (int i = 0; i < attachments.length(); i++) {
                             JSONObject attachment = attachments.getJSONObject(i);
                             String[] namespacedType = attachment.getString("namespacedType").split("/");
                             String type = namespacedType[1];
-                            if (type.equals("task")) {
+                            if (type.equals(TASK_ATTACHMENT_KEY)) {
                                 String attachmentName = attachment.getString("attachmentName");
                                 String dataStr = attachment.getString("data");
                                 String base64Decoded = new String(Utils.base64Decode(dataStr));
@@ -202,28 +212,8 @@ public class RoomTasksFragment extends Fragment implements AdapterView.OnItemCli
         client.deleteAttachment(deleteAttachmentCallback, attachmentName);
     }
 
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        Toast.makeText(getActivity(), "Item: " + position, Toast.LENGTH_SHORT)
-                .show();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        getActivity().registerReceiver(scanBroadcastReceiver, new IntentFilter("fragmentupdater"));
-        getActivity().registerReceiver(deleteTaskBroadcastReceiver, new IntentFilter("deleteTask"));
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        getActivity().unregisterReceiver(scanBroadcastReceiver);
-        getActivity().unregisterReceiver(deleteTaskBroadcastReceiver);
-    }
-
     public void onNewTaskButtonClicked(String task) {
-        JSONObject body = buildCreateAttachmentJsonBody(namespace, "task", task);
+        JSONObject body = buildCreateAttachmentJsonBody(namespace, TASK_ATTACHMENT_KEY, task);
         Callback createAttachmentCallback = new Callback() {
             @Override
             public void onFailure(Request request, IOException e) {
