@@ -7,13 +7,13 @@ import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ImageButton;
-import android.widget.ListView;
 import android.widget.Toast;
 
 import com.nabicon.Beacon;
@@ -38,10 +38,13 @@ public class RoomTasksFragment extends Fragment {
 
     private BroadcastReceiver scanBroadcastReceiver;
     private BroadcastReceiver deleteTaskBroadcastReceiver;
-    Beacon roomBeacon;
+    private Beacon roomBeacon;
     private String namespace;
-    TasksArrayAdapter adapter;
     private ArrayList<String> tasks;
+
+    private RecyclerView recyclerView;
+    private RecyclerView.Adapter mAdapter;
+    private RecyclerView.LayoutManager mLayoutManager;
 
 
     static ProximityBeaconImpl client;
@@ -61,7 +64,6 @@ public class RoomTasksFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         tasks = new ArrayList<>();
-        adapter = new TasksArrayAdapter(getActivity(), R.id.checked_task_item, tasks);
         scanBroadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -129,8 +131,11 @@ public class RoomTasksFragment extends Fragment {
             }
         };
         client.listNamespaces(listNamespacesCallback);
-        ListView listView = (ListView) fragmentView.findViewById(R.id.task_list_view);
-        listView.setAdapter(adapter);
+        recyclerView = (RecyclerView) fragmentView.findViewById(R.id.tasks_recycler_view);
+        mLayoutManager = new LinearLayoutManager(getActivity());
+        recyclerView.setLayoutManager(mLayoutManager);
+        mAdapter = new TasksArrayAdapter(tasks, getActivity());
+        recyclerView.setAdapter(mAdapter);
         return fragmentView;
     }
 
@@ -178,7 +183,7 @@ public class RoomTasksFragment extends Fragment {
                                 tasks.add(attachmentName + "$" +base64Decoded);
                             }
                         }
-                        adapter.notifyDataSetChanged();
+                        mAdapter.notifyDataSetChanged();
                     } catch (JSONException e) {
                         Log.e(TAG, "JSONException in fetching attachments", e);
                     }
@@ -202,7 +207,7 @@ public class RoomTasksFragment extends Fragment {
                 if (response.isSuccessful()) {
                     Toast.makeText(getActivity(), "Task deleted successfully", Toast.LENGTH_SHORT).show();
                     tasks.remove(pos);
-                    adapter.notifyDataSetChanged();
+                    mAdapter.notifyDataSetChanged();
                 } else {
                     String body = response.body().string();
                     Log.e(TAG, "Unsuccessful deleteAttachment request: " + body);
@@ -230,7 +235,7 @@ public class RoomTasksFragment extends Fragment {
                         String dataStr = json.getString("data");
                         String base64Decoded = new String(Utils.base64Decode(dataStr));
                         tasks.add(attachmentName + "$" +base64Decoded);
-                        adapter.notifyDataSetChanged();
+                        mAdapter.notifyDataSetChanged();
                     } catch (JSONException e) {
                         Log.e(TAG, "JSONException in building attachment data", e);
                     }
