@@ -10,6 +10,7 @@ import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.content.Context;
 import android.content.Intent;
+import android.os.CountDownTimer;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -121,6 +122,22 @@ public class BeaconScanner {
             scannedBeaconsList.clear();
             scanner.startScan(scanCallback);
             Log.i(TAG, "Start scan");
+            CountDownTimer countDownTimer = new CountDownTimer(8000, 100) {
+                Intent scanProgressIntent = new Intent("scanProgressUpdater");
+                @Override
+                public void onTick(long millisUntilFinished) {
+                    double i = (1 - millisUntilFinished / (double) 8000) * 100;
+                    scanProgressIntent.putExtra("progress", (int) i);
+                    activity.sendBroadcast(scanProgressIntent);
+                }
+
+                @Override
+                public void onFinish() {
+                    scanProgressIntent.putExtra("progress", 100);
+                    activity.sendBroadcast(scanProgressIntent);
+                }
+            };
+            countDownTimer.start();
             Runnable stopScanning = new Runnable() {
                 @Override
                 public void run() {

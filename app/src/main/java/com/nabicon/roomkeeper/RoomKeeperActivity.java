@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -19,6 +21,7 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ProgressBar;
 
 import com.nabicon.AuthorizedServiceTask;
 import com.nabicon.Beacon;
@@ -43,10 +46,13 @@ public class RoomKeeperActivity extends AppCompatActivity implements NewTaskDial
     private SharedPreferences sharedPreferences;
     private BeaconScanner beaconScanner;
     private BroadcastReceiver broadcastReceiver;
+    private BroadcastReceiver progressBroadcastReceiver;
     private Beacon roomBeacon;
     private MainRoomFragment mainRoomFragment;
     private RoomTasksFragment tasksFragment;
     private RoomNotesFragment notesFragment;
+    private ProgressBar progressBar;
+    private Menu optionsMenu;
 
     TabsAdapter tabsAdapter;
     ViewPager viewPager;
@@ -75,9 +81,29 @@ public class RoomKeeperActivity extends AppCompatActivity implements NewTaskDial
                 else {
                     toolbar.setTitle("Please scan again");
                 }
+
             }
         };
         beaconScanner.createScanner();
+        progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        progressBar.setProgress(0);
+        progressBar.getProgressDrawable().setColorFilter(Color.GREEN, PorterDuff.Mode.MULTIPLY);
+        progressBroadcastReceiver = new BroadcastReceiver() {
+
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                int progress = intent.getIntExtra("progress", 0);
+                if (optionsMenu != null) {
+                    MenuItem scanOption = optionsMenu.findItem(R.id.action_refresh);
+                    if (progress > 0 && progress < 100) {
+                        scanOption.setEnabled(false);
+                    } else {
+                        scanOption.setEnabled(true);
+                    }
+                }
+                progressBar.setProgress(progress);
+            }
+        };
         mainRoomFragment = MainRoomFragment.newInstance("", "");
         tasksFragment = RoomTasksFragment.newInstance(client);
         notesFragment = RoomNotesFragment.newInstance("", "");
@@ -94,6 +120,7 @@ public class RoomKeeperActivity extends AppCompatActivity implements NewTaskDial
     public void onResume() {
         super.onResume();
         registerReceiver(broadcastReceiver, new IntentFilter("fragmentupdater"));
+        registerReceiver(progressBroadcastReceiver, new IntentFilter("scanProgressUpdater"));
         // There could be multiple instances when we need to handle a UserRecoverableAuthException
         // from GMS. Run this check every time another activity has finished running.
         String accountName = getSharedPreferences(Constants.PREFS_NAME, 0)
@@ -108,6 +135,7 @@ public class RoomKeeperActivity extends AppCompatActivity implements NewTaskDial
     public void onPause() {
         super.onPause();
         unregisterReceiver(broadcastReceiver);
+        unregisterReceiver(progressBroadcastReceiver);
     }
 
     private void checkManifestPermission(String permission) {
@@ -126,6 +154,7 @@ public class RoomKeeperActivity extends AppCompatActivity implements NewTaskDial
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_action_bar, menu);
+        optionsMenu = menu;
         return true;
     }
 
