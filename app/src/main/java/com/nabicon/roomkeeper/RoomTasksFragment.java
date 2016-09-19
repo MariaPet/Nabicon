@@ -177,13 +177,9 @@ public class RoomTasksFragment extends Fragment {
                             String[] namespacedType = attachment.getString("namespacedType").split("/");
                             String type = namespacedType[1];
                             if (type.equals(TASK_ATTACHMENT_KEY)) {
-                                String attachmentName = attachment.getString("attachmentName");
-                                String dataStr = attachment.getString("data");
-                                String base64Decoded = new String(Utils.base64Decode(dataStr));
-                                tasks.add(attachmentName + "$" +base64Decoded);
+                                updateTaskList(attachment);
                             }
                         }
-                        mAdapter.notifyDataSetChanged();
                     } catch (JSONException e) {
                         Log.e(TAG, "JSONException in fetching attachments", e);
                     }
@@ -231,11 +227,7 @@ public class RoomTasksFragment extends Fragment {
                 if (response.isSuccessful()) {
                     try {
                         JSONObject json = new JSONObject(body);
-                        String attachmentName = json.getString("attachmentName");
-                        String dataStr = json.getString("data");
-                        String base64Decoded = new String(Utils.base64Decode(dataStr));
-                        tasks.add(attachmentName + "$" +base64Decoded);
-                        mAdapter.notifyDataSetChanged();
+                        updateTaskList(json);
                     } catch (JSONException e) {
                         Log.e(TAG, "JSONException in building attachment data", e);
                     }
@@ -257,5 +249,16 @@ public class RoomTasksFragment extends Fragment {
             Log.e(TAG, "JSONException", e);
         }
         return null;
+    }
+
+    private void updateTaskList(JSONObject attachment) throws JSONException{
+        String attachmentName = attachment.getString("attachmentName");
+        String dataStr = attachment.getString("data");
+        String base64Decoded = new String(Utils.base64Decode(dataStr));
+        JSONObject dataJson = new JSONObject(base64Decoded);
+        String taskName = dataJson.getString("taskName");
+        Log.i(TAG, taskName);
+        tasks.add(attachmentName + "$" + taskName);
+        mAdapter.notifyDataSetChanged();
     }
 }
