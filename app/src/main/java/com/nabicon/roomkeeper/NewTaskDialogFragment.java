@@ -5,6 +5,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,10 +15,15 @@ import android.widget.Toast;
 
 import com.nabicon.R;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 /**
  * A simple {@link DialogFragment} subclass.
  */
 public class NewTaskDialogFragment extends DialogFragment {
+
+    private static final String TAG = NewTaskDialogFragment.class.getSimpleName();
 
     private OnNewTaskButtonListener onNewTaskButtonListener;
 
@@ -47,7 +53,15 @@ public class NewTaskDialogFragment extends DialogFragment {
                 }
                 else {
                     if(onNewTaskButtonListener != null) {
-                        onNewTaskButtonListener.onNewTaskButtonClicked(taskName);
+                        JSONObject taskDataJson = new JSONObject();
+                        try {
+                            taskDataJson.put("taskName", taskName);
+                        }
+                        catch (JSONException e) {
+                            Log.e(TAG, "New task creation to JSON Object went wrong.");
+                        }
+                        String taskData = taskDataJson.toString();
+                        onNewTaskButtonListener.onNewTaskButtonClicked(taskData);
                         dismiss();
                     }
                 }
