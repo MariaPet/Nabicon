@@ -18,6 +18,12 @@
         android:inputType="textCapSentences" />
 
     <Button
+        android:id="@+id/task_deadline_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Set deadline"/>
+
+    <Button
         android:id="@+id/new_task_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

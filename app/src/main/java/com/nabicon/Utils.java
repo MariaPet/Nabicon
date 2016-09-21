@@ -11,13 +11,12 @@ public class Utils {
     private Utils() {}
 
     private static final char[] HEX = "0123456789ABCDEF".toCharArray();
-    //TODO what does Base64 do?
+
     public static byte[] base64Decode(String s) { return Base64.decode(s, Base64.DEFAULT);}
 
     public static String base64Encode(byte[] b) { return Base64.encodeToString(b, Base64.DEFAULT).trim();}
 
     public static String toHexString(byte[] bytes) {
-        //TODO why is the length doubled??
         char[] chars = new char[bytes.length * 2];
         for (int i = 0; i < bytes.length; i++) {
             //TODO no fucking clue what's going on here
