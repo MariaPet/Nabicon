@@ -24,7 +24,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Locale;
+
 
 /**
  * A simple {@link DialogFragment} subclass.
@@ -79,7 +79,7 @@ public class NewTaskDialogFragment extends DialogFragment {
                                 taskDataJson.put("deadlineDate", "");
                             }
                             else {
-                                DateFormat df = new SimpleDateFormat("MM-dd-yyyy");
+                                DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
                                 String deadlineString = df.format(deadlineDate);
                                 Log.i(TAG, deadlineString);
                                 taskDataJson.put("deadlineDate", deadlineString);

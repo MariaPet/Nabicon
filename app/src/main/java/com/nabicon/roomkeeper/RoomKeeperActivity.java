@@ -104,7 +104,7 @@ public class RoomKeeperActivity extends AppCompatActivity implements NewTaskDial
                 progressBar.setProgress(progress);
             }
         };
-        mainRoomFragment = MainRoomFragment.newInstance("", "");
+        mainRoomFragment = MainRoomFragment.newInstance(client);
         tasksFragment = RoomTasksFragment.newInstance(client);
         notesFragment = RoomNotesFragment.newInstance("", "");
         tabsAdapter = new TabsAdapter(getSupportFragmentManager(), mainRoomFragment, tasksFragment, notesFragment);

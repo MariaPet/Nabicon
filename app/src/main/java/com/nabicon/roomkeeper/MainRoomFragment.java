@@ -12,59 +12,61 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ListView;
 
 import com.nabicon.Beacon;
+import com.nabicon.Constants;
 import com.nabicon.R;
+import com.nabicon.Utils;
+import com.nabiconproximitybeacon.ProximityBeaconImpl;
+import com.squareup.okhttp.Callback;
+import com.squareup.okhttp.Request;
+import com.squareup.okhttp.Response;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 
 
 public class MainRoomFragment extends Fragment {
 
-    private static final String TAG = MainRoomFragment.class.getSimpleName();
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+    private static final String TAG = MainRoomFragment.class.getSimpleName();;
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    static ProximityBeaconImpl client;
     private BroadcastReceiver broadcastReceiver;
+    private Beacon roomBeacon;
+    private ArrayList<String> notifications;
+    private NotificationsAdapter adapter;
 
     public MainRoomFragment() {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment MainRoomFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static MainRoomFragment newInstance(String param1, String param2) {
+    public static MainRoomFragment newInstance(ProximityBeaconImpl clnt) {
         MainRoomFragment fragment = new MainRoomFragment();
-        Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
-        fragment.setArguments(args);
+        client = clnt;
         return fragment;
     }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
+        notifications = new ArrayList<>();
         broadcastReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Beacon roomBeacon = intent.getExtras().getParcelable("roomBeacon");
+                roomBeacon = intent.getExtras().getParcelable("roomBeacon");
                 if (roomBeacon != null) {
                     Log.i(TAG, "Room Changed to: " + roomBeacon.description);
+                    listNotifications();
                 }
             }
         };
@@ -74,8 +76,12 @@ public class MainRoomFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_main_room, container, false);
+        View rootView = inflater.inflate(R.layout.fragment_main_room, container, false);
+        adapter = new NotificationsAdapter(getActivity(), R.layout.notification_list_item, notifications);
+        adapter.setNotifyOnChange(true);
+        ListView notificationsListView = (ListView) rootView.findViewById(R.id.notificationsListView);
+        notificationsListView.setAdapter(adapter);
+        return rootView;
     }
 
     @Override
@@ -88,5 +94,59 @@ public class MainRoomFragment extends Fragment {
     public void onPause() {
         super.onPause();
         getActivity().unregisterReceiver(broadcastReceiver);
+    }
+
+    private void listNotifications() {
+        Callback listNotificationsCallback = new Callback() {
+            @Override
+            public void onFailure(Request request, IOException e) {
+                Log.e(TAG, "Failed request: " + request, e);
+            }
+
+            @Override
+            public void onResponse(Response response) throws IOException {
+                String body = response.body().string();
+                notifications.clear();
+                if (response.isSuccessful()) {
+                    try {
+                        JSONObject json = new JSONObject(body);
+                        JSONArray attachments = json.getJSONArray("attachments");
+                        for (int i = 0; i < attachments.length(); i++) {
+                            JSONObject attachment = attachments.getJSONObject(i);
+                            String[] namespacedType = attachment.getString("namespacedType").split("/");
+                            String type = namespacedType[1];
+                            if (type.equals(Constants.TASK_ATTACHMENT_KEY)) {
+//                                String attachmentName = attachment.getString("attachmentName");
+                                String dataStr = attachment.getString("data");
+                                String base64Decoded = new String(Utils.base64Decode(dataStr));
+                                JSONObject dataJson = new JSONObject(base64Decoded);
+                                String deadline =  dataJson.getString("deadlineDate");
+                                DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
+                                Calendar deadlineDate = Calendar.getInstance();
+                                deadlineDate.setTime(df.parse(deadline));
+                                Calendar currentDate = Calendar.getInstance();
+                                if (currentDate.get(Calendar.YEAR) == deadlineDate.get(Calendar.YEAR)
+                                        && currentDate.get(Calendar.MONTH) == deadlineDate.get(Calendar.MONTH)
+                                        && currentDate.get(Calendar.DAY_OF_MONTH) == deadlineDate.get(Calendar.DAY_OF_MONTH)) {
+                                    String taskName = dataJson.getString("taskName");
+                                    Log.i(TAG, "gia simera: "+taskName);
+                                    notifications.add(taskName);
+                                    adapter.notifyDataSetChanged();
+                                }
+                                else {
+                                    Log.e(TAG, "mia treli apotyxia");
+                                }
+                            }
+                        }
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            }
+        };
+        client.listAttachments(listNotificationsCallback, roomBeacon.getBeaconName());
     }
 }

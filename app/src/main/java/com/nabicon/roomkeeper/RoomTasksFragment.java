@@ -17,6 +17,7 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.nabicon.Beacon;
+import com.nabicon.Constants;
 import com.nabicon.R;
 import com.nabicon.Utils;
 import com.nabiconproximitybeacon.ProximityBeaconImpl;
@@ -34,7 +35,6 @@ import java.util.ArrayList;
 public class RoomTasksFragment extends Fragment {
 
     private static final String TAG = RoomTasksFragment.class.getSimpleName();
-    private static final String TASK_ATTACHMENT_KEY = "task";
 
     private BroadcastReceiver scanBroadcastReceiver;
     private BroadcastReceiver deleteTaskBroadcastReceiver;
@@ -165,6 +165,7 @@ public class RoomTasksFragment extends Fragment {
                 String body = response.body().string();
                 if (response.isSuccessful()) {
                     tasks.clear();
+                    mAdapter.notifyDataSetChanged();
                     try {
                         JSONObject json = new JSONObject(body);
                         if (json.length() == 0) {  // No attachment data
@@ -176,7 +177,7 @@ public class RoomTasksFragment extends Fragment {
                             JSONObject attachment = attachments.getJSONObject(i);
                             String[] namespacedType = attachment.getString("namespacedType").split("/");
                             String type = namespacedType[1];
-                            if (type.equals(TASK_ATTACHMENT_KEY)) {
+                            if (type.equals(Constants.TASK_ATTACHMENT_KEY)) {
                                 updateTaskList(attachment);
                             }
                         }
@@ -201,9 +202,9 @@ public class RoomTasksFragment extends Fragment {
             @Override
             public void onResponse(Response response) throws IOException {
                 if (response.isSuccessful()) {
-                    Toast.makeText(getActivity(), "Task deleted successfully", Toast.LENGTH_SHORT).show();
                     tasks.remove(pos);
                     mAdapter.notifyDataSetChanged();
+                    Toast.makeText(getActivity(), "Task deleted successfully", Toast.LENGTH_SHORT).show();
                 } else {
                     String body = response.body().string();
                     Log.e(TAG, "Unsuccessful deleteAttachment request: " + body);
@@ -214,7 +215,7 @@ public class RoomTasksFragment extends Fragment {
     }
 
     public void onNewTaskButtonClicked(String task) {
-        JSONObject body = buildCreateAttachmentJsonBody(namespace, TASK_ATTACHMENT_KEY, task);
+        JSONObject body = buildCreateAttachmentJsonBody(namespace, Constants.TASK_ATTACHMENT_KEY, task);
         Callback createAttachmentCallback = new Callback() {
             @Override
             public void onFailure(Request request, IOException e) {
@@ -257,7 +258,6 @@ public class RoomTasksFragment extends Fragment {
         String base64Decoded = new String(Utils.base64Decode(dataStr));
         JSONObject dataJson = new JSONObject(base64Decoded);
         String taskName = dataJson.getString("taskName");
-        Log.i(TAG, taskName);
         tasks.add(attachmentName + "$" + taskName);
         mAdapter.notifyDataSetChanged();
     }

@@ -29,6 +29,8 @@ public class Constants {
     //Unique name of the shared preferences file
     public static final String PREFS_NAME = "com.nabicon.Prefs";
 
+    public static final String TASK_ATTACHMENT_KEY = "task";
+
     // The Eddystone Service UUID, 0xFEAA.
     public static final ParcelUuid EDDYSTONE_SERVICE_UUID =
             ParcelUuid.fromString("0000FEAA-0000-1000-8000-00805F9B34FB");
