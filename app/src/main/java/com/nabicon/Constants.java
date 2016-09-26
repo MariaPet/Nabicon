@@ -19,6 +19,7 @@ public class Constants {
 
     public static final int REQUEST_CODE_PLACE_PICKER = 1003;
     public static final int REQUEST_CODE_ENABLE_BLE = 2;
+    public static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
 
     //TODO why do we use this package name?
     public static final String PACKAGE_NAME =

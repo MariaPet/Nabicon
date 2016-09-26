@@ -30,24 +30,36 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 public class RoomTasksFragment extends Fragment {
 
     private static final String TAG = RoomTasksFragment.class.getSimpleName();
 
+    private OnFragmentIneractionListener onFragmentIneractionListener;
     private BroadcastReceiver scanBroadcastReceiver;
     private BroadcastReceiver deleteTaskBroadcastReceiver;
     private Beacon roomBeacon;
     private String namespace;
-    private ArrayList<String> tasks;
+    private ArrayList<Task> tasks;
 
     private RecyclerView recyclerView;
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
 
 
+
     static ProximityBeaconImpl client;
+
+    public interface OnFragmentIneractionListener {
+        void onTaskAdded(Task taskToAdd);
+        void onTaskDeleted(Task taskToDelete);
+        void onNewScan();
+    }
 
     public RoomTasksFragment() {
         // Required empty public constructor
@@ -153,6 +165,24 @@ public class RoomTasksFragment extends Fragment {
         getActivity().unregisterReceiver(deleteTaskBroadcastReceiver);
     }
 
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if (context instanceof OnFragmentIneractionListener) {
+            onFragmentIneractionListener = (OnFragmentIneractionListener) context;
+        }
+        else {
+            throw new RuntimeException(context.toString()
+                    + " must implement OnFragmentIneractionListener");
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        onFragmentIneractionListener = null;
+    }
+
     private void listAttachments() {
         Callback listAttachmentsCallback = new Callback() {
             @Override
@@ -164,6 +194,7 @@ public class RoomTasksFragment extends Fragment {
             public void onResponse(Response response) throws IOException {
                 String body = response.body().string();
                 if (response.isSuccessful()) {
+                    onFragmentIneractionListener.onNewScan();
                     tasks.clear();
                     mAdapter.notifyDataSetChanged();
                     try {
@@ -202,9 +233,11 @@ public class RoomTasksFragment extends Fragment {
             @Override
             public void onResponse(Response response) throws IOException {
                 if (response.isSuccessful()) {
+                    Task taskToDelete = tasks.get(pos);
                     tasks.remove(pos);
                     mAdapter.notifyDataSetChanged();
                     Toast.makeText(getActivity(), "Task deleted successfully", Toast.LENGTH_SHORT).show();
+                    onFragmentIneractionListener.onTaskDeleted(taskToDelete);
                 } else {
                     String body = response.body().string();
                     Log.e(TAG, "Unsuccessful deleteAttachment request: " + body);
@@ -253,12 +286,28 @@ public class RoomTasksFragment extends Fragment {
     }
 
     private void updateTaskList(JSONObject attachment) throws JSONException{
-        String attachmentName = attachment.getString("attachmentName");
+        Task task = new Task();
+        task.attachmentName = attachment.getString("attachmentName");
         String dataStr = attachment.getString("data");
         String base64Decoded = new String(Utils.base64Decode(dataStr));
         JSONObject dataJson = new JSONObject(base64Decoded);
-        String taskName = dataJson.getString("taskName");
-        tasks.add(attachmentName + "$" + taskName);
+        task.title = dataJson.getString("taskName");
+        String deadline =  dataJson.getString("deadlineDate");
+        if (!deadline.equals("")) {
+            try {
+                DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
+                Calendar deadlineDate = Calendar.getInstance();
+                deadlineDate.setTime(df.parse(deadline));
+                task.deadline = deadlineDate;
+            } catch (ParseException e) {
+                Log.e(TAG, "Deadline Date could not be parsed: " + e.getMessage());
+            }
+        }
+        else {
+            task.deadline = null;
+        }
+        tasks.add(task);
         mAdapter.notifyDataSetChanged();
+        onFragmentIneractionListener.onTaskAdded(task);
     }
 }

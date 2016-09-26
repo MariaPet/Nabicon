@@ -20,7 +20,7 @@ public class TasksArrayAdapter extends RecyclerView.Adapter<TasksArrayAdapter.Vi
 
     private static final String TAG = TasksArrayAdapter.class.getSimpleName();
     private Context activity;
-    private ArrayList<String> mDataset;
+    private ArrayList<Task> mDataset;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -35,7 +35,7 @@ public class TasksArrayAdapter extends RecyclerView.Adapter<TasksArrayAdapter.Vi
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public TasksArrayAdapter(ArrayList<String> myDataset, Context activity) {
+    public TasksArrayAdapter(ArrayList<Task> myDataset, Context activity) {
         this.activity = activity;
         mDataset = myDataset;
     }
@@ -52,10 +52,10 @@ public class TasksArrayAdapter extends RecyclerView.Adapter<TasksArrayAdapter.Vi
     @Override
     public void onBindViewHolder(TasksArrayAdapter.ViewHolder holder, int position) {
         final int pos = position;
-        String[] tasks = mDataset.get(pos).split("\\$");
-        final String attachmentName = tasks[0];
-        final String task = tasks[1];
-        holder.checkedTextView.setText(task);
+        Task task = mDataset.get(pos);
+        final String title = task.title;
+        final String attachmentName = task.attachmentName;
+        holder.checkedTextView.setText(title);
         holder.checkedTextView.setEnabled(true);
         holder.checkedTextView.setChecked(false);
         holder.checkedTextView.setOnClickListener(new View.OnClickListener() {

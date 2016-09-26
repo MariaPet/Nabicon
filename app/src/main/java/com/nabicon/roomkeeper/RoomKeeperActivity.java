@@ -40,8 +40,9 @@ import org.json.JSONObject;
 
 import java.io.IOException;
 
-public class RoomKeeperActivity extends AppCompatActivity implements NewTaskDialogFragment.OnNewTaskButtonListener{
-    private static final int PERMISSION_REQUEST_FINE_LOCATION = 1;
+public class RoomKeeperActivity extends AppCompatActivity implements NewTaskDialogFragment.OnNewTaskButtonListener,
+        RoomTasksFragment.OnFragmentIneractionListener{
+
     private static final String TAG = RoomKeeperActivity.class.getSimpleName();
     private SharedPreferences sharedPreferences;
     private BeaconScanner beaconScanner;
@@ -143,7 +144,7 @@ public class RoomKeeperActivity extends AppCompatActivity implements NewTaskDial
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
                     new String[]{permission},
-                    PERMISSION_REQUEST_FINE_LOCATION);
+                    Constants.PERMISSION_REQUEST_FINE_LOCATION);
         }
         else {
             beaconScanner.startScan();
@@ -171,7 +172,7 @@ public class RoomKeeperActivity extends AppCompatActivity implements NewTaskDial
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
         switch (requestCode) {
-            case PERMISSION_REQUEST_FINE_LOCATION: {
+            case Constants.PERMISSION_REQUEST_FINE_LOCATION: {
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
@@ -204,5 +205,20 @@ public class RoomKeeperActivity extends AppCompatActivity implements NewTaskDial
     @Override
     public void onNewTaskButtonClicked(String task) {
         tasksFragment.onNewTaskButtonClicked(task);
+    }
+
+    @Override
+    public void onTaskAdded(Task task) {
+        mainRoomFragment.addNotification(task);
+    }
+
+    @Override
+    public void onTaskDeleted(Task task) {
+        mainRoomFragment.deleteNotification(task);
+    }
+
+    @Override
+    public void onNewScan() {
+        mainRoomFragment.clearNotifications();
     }
 }

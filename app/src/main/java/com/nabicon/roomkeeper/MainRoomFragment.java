@@ -34,6 +34,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Iterator;
 
 
 public class MainRoomFragment extends Fragment {
@@ -43,7 +44,7 @@ public class MainRoomFragment extends Fragment {
     static ProximityBeaconImpl client;
     private BroadcastReceiver broadcastReceiver;
     private Beacon roomBeacon;
-    private ArrayList<String> notifications;
+    private ArrayList<Task> notifications;
     private NotificationsAdapter adapter;
 
     public MainRoomFragment() {
@@ -66,7 +67,6 @@ public class MainRoomFragment extends Fragment {
                 roomBeacon = intent.getExtras().getParcelable("roomBeacon");
                 if (roomBeacon != null) {
                     Log.i(TAG, "Room Changed to: " + roomBeacon.description);
-                    listNotifications();
                 }
             }
         };
@@ -96,57 +96,30 @@ public class MainRoomFragment extends Fragment {
         getActivity().unregisterReceiver(broadcastReceiver);
     }
 
-    private void listNotifications() {
-        Callback listNotificationsCallback = new Callback() {
-            @Override
-            public void onFailure(Request request, IOException e) {
-                Log.e(TAG, "Failed request: " + request, e);
+    public void addNotification(Task task) {
+        if (task.deadline != null) {
+            Calendar currentDate = Calendar.getInstance();
+            if (currentDate.get(Calendar.YEAR) == task.deadline.get(Calendar.YEAR)
+                    && currentDate.get(Calendar.MONTH) == task.deadline.get(Calendar.MONTH)
+                    && currentDate.get(Calendar.DAY_OF_MONTH) == task.deadline.get(Calendar.DAY_OF_MONTH)) {
+                notifications.add(task);
+                adapter.notifyDataSetChanged();
             }
+        }
+    }
 
-            @Override
-            public void onResponse(Response response) throws IOException {
-                String body = response.body().string();
-                notifications.clear();
-                if (response.isSuccessful()) {
-                    try {
-                        JSONObject json = new JSONObject(body);
-                        JSONArray attachments = json.getJSONArray("attachments");
-                        for (int i = 0; i < attachments.length(); i++) {
-                            JSONObject attachment = attachments.getJSONObject(i);
-                            String[] namespacedType = attachment.getString("namespacedType").split("/");
-                            String type = namespacedType[1];
-                            if (type.equals(Constants.TASK_ATTACHMENT_KEY)) {
-//                                String attachmentName = attachment.getString("attachmentName");
-                                String dataStr = attachment.getString("data");
-                                String base64Decoded = new String(Utils.base64Decode(dataStr));
-                                JSONObject dataJson = new JSONObject(base64Decoded);
-                                String deadline =  dataJson.getString("deadlineDate");
-                                DateFormat df = new SimpleDateFormat("dd-MM-yyyy");
-                                Calendar deadlineDate = Calendar.getInstance();
-                                deadlineDate.setTime(df.parse(deadline));
-                                Calendar currentDate = Calendar.getInstance();
-                                if (currentDate.get(Calendar.YEAR) == deadlineDate.get(Calendar.YEAR)
-                                        && currentDate.get(Calendar.MONTH) == deadlineDate.get(Calendar.MONTH)
-                                        && currentDate.get(Calendar.DAY_OF_MONTH) == deadlineDate.get(Calendar.DAY_OF_MONTH)) {
-                                    String taskName = dataJson.getString("taskName");
-                                    Log.i(TAG, "gia simera: "+taskName);
-                                    notifications.add(taskName);
-                                    adapter.notifyDataSetChanged();
-                                }
-                                else {
-                                    Log.e(TAG, "mia treli apotyxia");
-                                }
-                            }
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    } catch (ParseException e) {
-                        e.printStackTrace();
-                    }
-
-                }
+    public void deleteNotification(Task taskToDelete) {
+        for (Iterator<Task> iter = notifications.iterator(); iter.hasNext();) {
+            Task task = iter.next();
+            if (task.attachmentName.equals(taskToDelete.attachmentName)) {
+                iter.remove();
             }
-        };
-        client.listAttachments(listNotificationsCallback, roomBeacon.getBeaconName());
+        }
+        adapter.notifyDataSetChanged();
+    }
+
+    public void clearNotifications() {
+        notifications.clear();
+        adapter.notifyDataSetChanged();
     }
 }
